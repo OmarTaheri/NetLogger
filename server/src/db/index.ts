@@ -5,7 +5,6 @@ import { config } from '../config.js';
 import * as schema from './schema.js';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
 const dbDir = path.dirname(config.databasePath);
 if (!fs.existsSync(dbDir)) {
@@ -19,5 +18,19 @@ sqlite.pragma('foreign_keys = ON');
 export const db = drizzle(sqlite, { schema });
 
 export function initDb() {
+  // Handle legacy databases that have tables but no Drizzle migration history
+  const hasOldTables = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='admins'").get();
+  const hasMigrationHistory = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'").get();
+
+  if (hasOldTables && !hasMigrationHistory) {
+    console.log('Legacy database detected, dropping old tables for clean migration...');
+    sqlite.pragma('foreign_keys = OFF');
+    const tables = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name != 'sqlite_sequence'").all() as { name: string }[];
+    for (const { name } of tables) {
+      sqlite.exec(`DROP TABLE IF EXISTS "${name}"`);
+    }
+    sqlite.pragma('foreign_keys = ON');
+  }
+
   migrate(db, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
 }
