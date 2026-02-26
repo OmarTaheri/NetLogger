@@ -8,6 +8,7 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { getLink } from '../api/links';
 import { getVisitors, getStats, deleteVisitor } from '../api/visitors';
 import type { Link, Stats, Visitor } from 'shared/types';
+import { copyToClipboard } from '../utils/clipboard';
 
 type LinkWithUrl = Link & { trackingUrl: string };
 
@@ -45,9 +46,9 @@ export default function LinkDetailPage() {
     }
   });
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (link) {
-      navigator.clipboard.writeText(link.trackingUrl);
+      await copyToClipboard(link.trackingUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

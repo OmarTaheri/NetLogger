@@ -1,11 +1,13 @@
+import { escapeHtml } from '../utils/html.js';
+
 interface RedirectTemplateOptions {
   loadingMessage?: string;
   subMessage?: string;
 }
 
 export function renderRedirectTemplate(slug: string, targetUrl: string, options: RedirectTemplateOptions = {}, gpsMode: string = 'optional'): string {
-  const loadingMessage = options.loadingMessage || 'Please wait...';
-  const subMessage = options.subMessage || 'Verifying and redirecting you';
+  const loadingMessage = escapeHtml(options.loadingMessage || 'Please wait...');
+  const subMessage = escapeHtml(options.subMessage || 'Verifying and redirecting you');
 
   return `<!DOCTYPE html>
 <html lang="en">

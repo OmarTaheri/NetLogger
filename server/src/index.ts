@@ -12,6 +12,7 @@ import { admins, domains } from './db/schema.js';
 import { eq } from 'drizzle-orm';
 import { wsManager } from './ws/index.js';
 import * as domainService from './services/domain.service.js';
+import { sanitizeDomain } from './utils/domain.js';
 
 import authRoutes from './routes/auth.routes.js';
 import linksRoutes from './routes/links.routes.js';
@@ -25,7 +26,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+  origin: new URL(config.baseUrl).origin,
+  credentials: true,
+}));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -80,7 +84,7 @@ async function start() {
   }
 
   // Seed server domain
-  const baseHost = config.baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const baseHost = sanitizeDomain(config.baseUrl);
   const existingDomain = db.select().from(domains).where(eq(domains.domain, baseHost)).get();
   if (!existingDomain) {
     domainService.createDomain(baseHost);

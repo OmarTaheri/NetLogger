@@ -5,6 +5,7 @@ import { getLinks, deleteLink, updateLink } from '../api/links';
 import { getDomains } from '../api/domains';
 import { HudPageTitle, HudPanel, HudBadge, HudButton, HudSelect } from '../components/ui/HudComponents';
 import type { Link as LinkType, Domain } from 'shared/types';
+import { copyToClipboard } from '../utils/clipboard';
 
 type LinkWithUrl = LinkType & { trackingUrl: string };
 
@@ -30,8 +31,8 @@ export default function LinksPage() {
     loadDomains();
   }, [loadLinks, loadDomains]);
 
-  const handleCopy = (link: LinkWithUrl) => {
-    navigator.clipboard.writeText(link.trackingUrl);
+  const handleCopy = async (link: LinkWithUrl) => {
+    await copyToClipboard(link.trackingUrl);
     setCopied(link.id);
     setTimeout(() => setCopied(null), 2000);
   };

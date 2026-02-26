@@ -1,27 +1,16 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.js';
 import * as linkService from '../services/link.service.js';
-import * as domainService from '../services/domain.service.js';
-import { config } from '../config.js';
+import { VALID_TEMPLATE_IDS, VALID_GPS_MODES } from 'shared/types';
 
 const router = Router();
 router.use(authMiddleware);
-
-function getTrackingUrl(link: { templateId: string; slug: string; domainId: number | null }) {
-  if (link.domainId) {
-    const domain = domainService.getDomainById(link.domainId);
-    if (domain && domain.isActive) {
-      return `https://${domain.domain}/t/${link.templateId}/${link.slug}`;
-    }
-  }
-  return `${config.baseUrl}/t/${link.templateId}/${link.slug}`;
-}
 
 router.get('/', (_req, res) => {
   const links = linkService.getAllLinks();
   const linksWithUrl = links.map(link => ({
     ...link,
-    trackingUrl: getTrackingUrl(link),
+    trackingUrl: linkService.getTrackingUrl(link),
   }));
   res.json(linksWithUrl);
 });
@@ -32,19 +21,19 @@ router.post('/', (req, res) => {
     res.status(400).json({ error: 'targetUrl and templateId are required' });
     return;
   }
-  if (!['redirect', 'gdrive'].includes(templateId)) {
-    res.status(400).json({ error: 'Invalid templateId. Use "redirect" or "gdrive"' });
+  if (!VALID_TEMPLATE_IDS.includes(templateId)) {
+    res.status(400).json({ error: `Invalid templateId. Use ${VALID_TEMPLATE_IDS.map(t => `"${t}"`).join(' or ')}` });
     return;
   }
-  if (gpsMode && !['required', 'optional', 'disabled'].includes(gpsMode)) {
-    res.status(400).json({ error: 'Invalid gpsMode. Use "required", "optional", or "disabled"' });
+  if (gpsMode && !VALID_GPS_MODES.includes(gpsMode)) {
+    res.status(400).json({ error: `Invalid gpsMode. Use ${VALID_GPS_MODES.map(m => `"${m}"`).join(', ')}` });
     return;
   }
 
   const link = linkService.createLink(targetUrl, templateId, title, templateOptions, gpsMode, domainId);
   res.json({
     ...link,
-    trackingUrl: getTrackingUrl(link),
+    trackingUrl: linkService.getTrackingUrl(link),
   });
 });
 
@@ -56,7 +45,7 @@ router.get('/:id', (req, res) => {
   }
   res.json({
     ...link,
-    trackingUrl: getTrackingUrl(link),
+    trackingUrl: linkService.getTrackingUrl(link),
   });
 });
 
@@ -67,7 +56,7 @@ router.patch('/:id', (req, res) => {
   if (isActive !== undefined) updateData.isActive = isActive;
   if (templateOptions !== undefined) updateData.templateOptions = JSON.stringify(templateOptions);
   if (gpsMode !== undefined) {
-    if (!['required', 'optional', 'disabled'].includes(gpsMode)) {
+    if (!VALID_GPS_MODES.includes(gpsMode)) {
       res.status(400).json({ error: 'Invalid gpsMode' });
       return;
     }
@@ -82,7 +71,7 @@ router.patch('/:id', (req, res) => {
   }
   res.json({
     ...link,
-    trackingUrl: getTrackingUrl(link),
+    trackingUrl: linkService.getTrackingUrl(link),
   });
 });
 

@@ -4,6 +4,8 @@ import type { Domain } from 'shared/types';
 import { createLink } from '../api/links';
 import { getDomains } from '../api/domains';
 import { HudPanel, HudInput, HudSelect, HudButton } from './ui/HudComponents';
+import RedirectOptions from './template-options/RedirectOptions';
+import GdriveOptions from './template-options/GdriveOptions';
 
 interface CreateLinkFormProps {
   onCreated: () => void;
@@ -180,80 +182,27 @@ export default function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormPr
         </div>
 
         {templateId === 'redirect' && (
-          <div className="space-y-3 p-4 bg-hud-bg/50 border border-hud-border">
-            <p className="text-hud-xs uppercase tracking-widest font-mono text-hud-text-dim">Redirect Options</p>
-            <div>
-              <label className="block text-hud-xs text-hud-text-muted mb-1">Loading Message</label>
-              <HudInput
-                type="text"
-                value={loadingMessage}
-                onChange={(e) => setLoadingMessage(e.target.value)}
-                placeholder="Please wait..."
-              />
-            </div>
-            <div>
-              <label className="block text-hud-xs text-hud-text-muted mb-1">Sub-message</label>
-              <HudInput
-                type="text"
-                value={subMessage}
-                onChange={(e) => setSubMessage(e.target.value)}
-                placeholder="Verifying and redirecting you"
-              />
-            </div>
-          </div>
+          <RedirectOptions
+            loadingMessage={loadingMessage}
+            setLoadingMessage={setLoadingMessage}
+            subMessage={subMessage}
+            setSubMessage={setSubMessage}
+          />
         )}
 
         {templateId === 'gdrive' && (
-          <div className="space-y-3 p-4 bg-hud-bg/50 border border-hud-border">
-            <p className="text-hud-xs uppercase tracking-widest font-mono text-hud-text-dim">Google Drive Options</p>
-            <div>
-              <label className="block text-hud-xs text-hud-text-muted mb-1">File Name</label>
-              <HudInput
-                type="text"
-                value={fileName}
-                onChange={(e) => setFileName(e.target.value)}
-                placeholder="Shared_Document.pdf"
-              />
-            </div>
-            <div>
-              <label className="block text-hud-xs text-hud-text-muted mb-1">File Type</label>
-              <HudSelect value={fileType} onChange={(e) => setFileType(e.target.value as any)}>
-                <option value="pdf">PDF</option>
-                <option value="doc">Document</option>
-                <option value="sheet">Spreadsheet</option>
-                <option value="slide">Presentation</option>
-                <option value="image">Image</option>
-                <option value="zip">ZIP Archive</option>
-              </HudSelect>
-            </div>
-            <div>
-              <label className="block text-hud-xs text-hud-text-muted mb-1">File Size</label>
-              <HudInput
-                type="text"
-                value={fileSize}
-                onChange={(e) => setFileSize(e.target.value)}
-                placeholder="2.4 MB"
-              />
-            </div>
-            <div>
-              <label className="block text-hud-xs text-hud-text-muted mb-1">Owner Email</label>
-              <HudInput
-                type="text"
-                value={ownerEmail}
-                onChange={(e) => setOwnerEmail(e.target.value)}
-                placeholder="user@gmail.com"
-              />
-            </div>
-            <div>
-              <label className="block text-hud-xs text-hud-text-muted mb-1">Custom Message (optional)</label>
-              <HudInput
-                type="text"
-                value={gdriveMessage}
-                onChange={(e) => setGdriveMessage(e.target.value)}
-                placeholder="Leave blank for default message"
-              />
-            </div>
-          </div>
+          <GdriveOptions
+            fileName={fileName}
+            setFileName={setFileName}
+            fileType={fileType}
+            setFileType={setFileType}
+            fileSize={fileSize}
+            setFileSize={setFileSize}
+            ownerEmail={ownerEmail}
+            setOwnerEmail={setOwnerEmail}
+            gdriveMessage={gdriveMessage}
+            setGdriveMessage={setGdriveMessage}
+          />
         )}
 
         {error && <p className="text-hud-red text-sm font-mono">{error}</p>}

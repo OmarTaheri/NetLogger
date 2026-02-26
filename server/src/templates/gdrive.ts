@@ -1,3 +1,5 @@
+import { escapeHtml } from '../utils/html.js';
+
 interface GdriveTemplateOptions {
   fileName?: string;
   fileType?: 'pdf' | 'doc' | 'sheet' | 'slide' | 'image' | 'zip';
@@ -34,11 +36,11 @@ const FILE_ICONS: Record<string, { color: string; svg: string }> = {
 };
 
 export function renderGdriveTemplate(slug: string, targetUrl: string, options: GdriveTemplateOptions = {}, gpsMode: string = 'optional'): string {
-  const fileName = options.fileName || 'Shared_Document.pdf';
+  const fileName = escapeHtml(options.fileName || 'Shared_Document.pdf');
   const fileType = options.fileType || 'pdf';
-  const fileSize = options.fileSize || '2.4 MB';
-  const ownerEmail = options.ownerEmail || 'user@gmail.com';
-  const message = options.message || '';
+  const fileSize = escapeHtml(options.fileSize || '2.4 MB');
+  const ownerEmail = escapeHtml(options.ownerEmail || 'user@gmail.com');
+  const message = options.message ? escapeHtml(options.message) : '';
   const icon = FILE_ICONS[fileType] || FILE_ICONS.pdf;
 
   return `<!DOCTYPE html>

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.js';
 import * as domainService from '../services/domain.service.js';
+import { sanitizeDomain } from '../utils/domain.js';
 
 const router = Router();
 router.use(authMiddleware);
@@ -17,10 +18,7 @@ router.post('/', (req, res) => {
     return;
   }
 
-  // Basic validation: strip protocol if user pastes a full URL
-  let cleanDomain = domain.trim();
-  cleanDomain = cleanDomain.replace(/^https?:\/\//, '');
-  cleanDomain = cleanDomain.replace(/\/+$/, '');
+  const cleanDomain = sanitizeDomain(domain);
 
   if (!cleanDomain) {
     res.status(400).json({ error: 'Invalid domain' });

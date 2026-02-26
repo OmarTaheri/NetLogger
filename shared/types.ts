@@ -214,8 +214,14 @@ export interface Stats {
   visitorsPerDay: { date: string; count: number }[];
 }
 
+export const VALID_TEMPLATE_IDS = ['redirect', 'gdrive'] as const;
+export const VALID_GPS_MODES = ['required', 'optional', 'disabled'] as const;
+
+export type TemplateId = typeof VALID_TEMPLATE_IDS[number];
+export type GpsMode = typeof VALID_GPS_MODES[number];
+
 export interface TemplateInfo {
-  id: 'redirect' | 'gdrive';
+  id: TemplateId;
   name: string;
   description: string;
 }

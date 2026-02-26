@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, real, sqliteTable, text, index } from 'drizzle-orm/sqlite-core';
 
 export const admins = sqliteTable('admins', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -182,4 +182,7 @@ export const visitors = sqliteTable('visitors', {
   ipLon: real('ip_lon'),
   ipIsp: text('ip_isp'),
   createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
-});
+}, (table) => [
+  index('visitors_link_id_idx').on(table.linkId),
+  index('visitors_created_at_idx').on(table.createdAt),
+]);

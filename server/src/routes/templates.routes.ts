@@ -19,7 +19,14 @@ router.get('/:templateId/:slug', (req, res) => {
     return;
   }
 
-  const options = link.templateOptions ? JSON.parse(link.templateOptions) : {};
+  let options: Record<string, unknown> = {};
+  if (link.templateOptions) {
+    try {
+      options = JSON.parse(link.templateOptions);
+    } catch {
+      options = {};
+    }
+  }
   const gpsMode = link.gpsMode || 'optional';
 
   let html: string;

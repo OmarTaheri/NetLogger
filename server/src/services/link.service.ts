@@ -2,6 +2,8 @@ import { db } from '../db/index.js';
 import { links } from '../db/schema.js';
 import { eq, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import * as domainService from './domain.service.js';
+import { config } from '../config.js';
 
 export function createLink(targetUrl: string, templateId: string, title?: string, templateOptions?: object, gpsMode?: string, domainId?: number) {
   const slug = nanoid(8);
@@ -42,4 +44,14 @@ export function incrementVisitCount(id: number) {
     .set({ visitCount: sql`${links.visitCount} + 1` })
     .where(eq(links.id, id))
     .run();
+}
+
+export function getTrackingUrl(link: { templateId: string; slug: string; domainId: number | null }) {
+  if (link.domainId) {
+    const domain = domainService.getDomainById(link.domainId);
+    if (domain && domain.isActive) {
+      return `https://${domain.domain}/t/${link.templateId}/${link.slug}`;
+    }
+  }
+  return `${config.baseUrl}/t/${link.templateId}/${link.slug}`;
 }

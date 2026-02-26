@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.js';
 import * as visitorService from '../services/visitor.service.js';
-import * as statsService from '../services/stats.service.js';
 
 const router = Router();
 router.use(authMiddleware);
