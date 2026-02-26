@@ -18,8 +18,6 @@ sqlite.pragma('foreign_keys = ON');
 
 export const db = drizzle(sqlite, { schema });
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 export function initDb() {
-  migrate(db, { migrationsFolder: path.resolve(__dirname, '../../../drizzle') });
+  migrate(db, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
 }
