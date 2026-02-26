@@ -2,7 +2,6 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import bcrypt from 'bcrypt';
 
@@ -22,7 +21,8 @@ import domainsRoutes from './routes/domains.routes.js';
 import collectRoutes from './routes/collect.routes.js';
 import templatesRoutes from './routes/templates.routes.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const staticDir = path.resolve(process.cwd(), 'server/static');
+const clientPath = path.join(staticDir, 'client');
 
 const app = express();
 
@@ -34,7 +34,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Static files for templates (collector.js, css, images)
-app.use('/static', express.static(path.join(__dirname, '../static')));
+app.use('/static', express.static(staticDir));
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -53,7 +53,6 @@ app.use('/c', collectRoutes);
 app.use('/t', templatesRoutes);
 
 // Serve built React client in production
-const clientPath = path.join(__dirname, '../static/client');
 app.use(express.static(clientPath));
 app.get('*', (req, res) => {
   // Don't serve index.html for API/template/collect routes
