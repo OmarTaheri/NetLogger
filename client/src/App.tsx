@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
@@ -7,6 +7,9 @@ import LinksPage from './pages/LinksPage';
 import LinkDetailPage from './pages/LinkDetailPage';
 import VisitorsPage from './pages/VisitorsPage';
 import DomainsPage from './pages/DomainsPage';
+import SettingsPage from './pages/SettingsPage';
+import WebhooksPage from './pages/WebhooksPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
   const { user, loading, login, logout } = useAuth();
@@ -31,7 +34,9 @@ export default function App() {
         <Route path="/links/:id" element={<LinkDetailPage />} />
         <Route path="/visitors" element={<VisitorsPage />} />
         <Route path="/domains" element={<DomainsPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/webhooks" element={<WebhooksPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );

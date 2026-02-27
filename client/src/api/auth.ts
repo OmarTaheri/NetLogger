@@ -11,3 +11,7 @@ export function logout() {
 export function getMe() {
   return api.get<{ id: number; username: string }>('/api/auth/me');
 }
+
+export function changePassword(currentPassword: string, newPassword: string) {
+  return api.patch<{ ok: boolean }>('/api/auth/password', { currentPassword, newPassword });
+}

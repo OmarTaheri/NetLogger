@@ -6,6 +6,8 @@ import { lookupIp } from '../services/geoip.service.js';
 import { analyzeVisitor } from '../services/analysis.service.js';
 import { wsManager } from '../ws/index.js';
 import { getClientIp } from '../utils/ip.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { fireWebhooks } from '../services/webhook.service.js';
 
 const collectLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -17,12 +19,18 @@ const collectLimiter = rateLimit({
 
 const router = Router();
 
-router.post('/:slug', collectLimiter, async (req, res) => {
+router.post('/:slug', collectLimiter, asyncHandler(async (req, res) => {
   const slug = req.params.slug as string;
   const link = linkService.getLinkBySlug(slug);
 
   if (!link || !link.isActive) {
     res.status(404).json({ ok: false });
+    return;
+  }
+
+  // Check expiration
+  if (linkService.isLinkExpired(link)) {
+    res.status(410).json({ ok: false, error: 'Link expired' });
     return;
   }
 
@@ -41,12 +49,20 @@ router.post('/:slug', collectLimiter, async (req, res) => {
 
   linkService.incrementVisitCount(link.id);
 
+  const visitorWithLink = { ...visitor, linkSlug: link.slug, linkTitle: link.title };
+
   wsManager.broadcast({
     type: 'new_visitor',
-    data: { ...visitor, linkSlug: link.slug, linkTitle: link.title },
+    data: visitorWithLink,
   });
 
+  // Fire webhooks asynchronously
+  fireWebhooks('new_visitor', visitorWithLink).catch(() => {});
+  if (visitor.botScore !== null && visitor.botScore >= 80) {
+    fireWebhooks('high_risk_visitor', visitorWithLink).catch(() => {});
+  }
+
   res.json({ ok: true });
-});
+}));
 
 export default router;

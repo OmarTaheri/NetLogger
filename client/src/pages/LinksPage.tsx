@@ -4,6 +4,7 @@ import CreateLinkForm from '../components/CreateLinkForm';
 import { getLinks, deleteLink, updateLink } from '../api/links';
 import { getDomains } from '../api/domains';
 import { HudPageTitle, HudPanel, HudBadge, HudButton, HudSelect } from '../components/ui/HudComponents';
+import { useToast } from '../hooks/useToast';
 import type { Link as LinkType, Domain } from 'shared/types';
 import { copyToClipboard } from '../utils/clipboard';
 
@@ -13,7 +14,7 @@ export default function LinksPage() {
   const [links, setLinks] = useState<LinkWithUrl[]>([]);
   const [domains, setDomains] = useState<Domain[]>([]);
   const [showCreate, setShowCreate] = useState(false);
-  const [copied, setCopied] = useState<number | null>(null);
+  const { addToast } = useToast();
   const navigate = useNavigate();
 
   const loadLinks = useCallback(async () => {
@@ -33,8 +34,7 @@ export default function LinksPage() {
 
   const handleCopy = async (link: LinkWithUrl) => {
     await copyToClipboard(link.trackingUrl);
-    setCopied(link.id);
-    setTimeout(() => setCopied(null), 2000);
+    addToast('Tracking URL copied', 'success');
   };
 
   const handleToggle = async (link: LinkWithUrl) => {
@@ -85,8 +85,8 @@ export default function LinksPage() {
                   >
                     {link.title || link.slug}
                   </Link>
-                  <HudBadge variant={link.templateId === 'gdrive' ? 'warning' : 'info'}>
-                    {link.templateId === 'gdrive' ? 'Google Drive' : 'Redirect'}
+                  <HudBadge variant={link.templateId === 'gdrive' ? 'warning' : link.templateId === 'captcha' ? 'danger' : 'info'}>
+                    {{ redirect: 'Redirect', gdrive: 'Google Drive', dropbox: 'Dropbox', captcha: 'CAPTCHA', wetransfer: 'WeTransfer' }[link.templateId] || link.templateId}
                   </HudBadge>
                   <HudBadge variant={
                     link.gpsMode === 'required' ? 'danger'
@@ -110,7 +110,7 @@ export default function LinksPage() {
                     onClick={() => handleCopy(link)}
                     className="text-hud-xs text-hud-accent hover:text-hud-accent/80 font-mono uppercase whitespace-nowrap"
                   >
-                    {copied === link.id ? 'Copied!' : 'Copy'}
+                    Copy
                   </button>
                 </div>
                 {activeDomains.length > 0 && (

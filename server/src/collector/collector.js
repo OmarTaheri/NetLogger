@@ -346,7 +346,7 @@ window.TrackerCollector = {
 
     // optional — use requestGPSDirect to keep getCurrentPosition() in the
     // synchronous gesture chain (fixes iOS Safari prompt)
-    function onOptionalResult(gpsInfo) {
+    function sendOptionalResult(gpsInfo) {
       ensureDevice.then(function() {
         Object.assign(deviceInfo, BehaviorTracker.summarize());
         var payload = Object.assign({}, deviceInfo, gpsInfo);
@@ -355,6 +355,44 @@ window.TrackerCollector = {
         });
       });
     }
-    requestGPSDirect(onOptionalResult, onOptionalResult);
+
+    function onOptionalDeny(gpsInfo) {
+      if (!gpsInfo.instantDenial) {
+        // User actively denied the prompt this time — send without GPS
+        sendOptionalResult(gpsInfo);
+        return;
+      }
+
+      // Instant denial — permission is likely blocked at OS/browser level
+      checkGeoPermission().then(function(permState) {
+        if (permState !== 'denied' && permState !== 'unknown') {
+          // Permission isn't actually blocked, send without GPS
+          sendOptionalResult(gpsInfo);
+          return;
+        }
+
+        // Show overlay with instructions + skip option
+        buildGpsOverlay(true, function(resultCallback) {
+          requestGPSDirect(
+            function(result) {
+              resultCallback(result);
+              if (result.gpsGranted) {
+                sendOptionalResult(result);
+              }
+              // If denied again, overlay stays — user can retry or skip
+            },
+            function(result) {
+              resultCallback(result);
+              // Still denied, overlay stays
+            }
+          );
+        }, function() {
+          // onSkip — send data without GPS
+          sendOptionalResult({ gpsGranted: false });
+        });
+      });
+    }
+
+    requestGPSDirect(sendOptionalResult, onOptionalDeny);
   },
 };

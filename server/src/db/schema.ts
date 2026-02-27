@@ -26,6 +26,8 @@ export const links = sqliteTable('links', {
   domainId: integer('domain_id').references(() => domains.id, { onDelete: 'set null' }),
   isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
   visitCount: integer('visit_count').default(0).notNull(),
+  expiresAt: text('expires_at'),
+  maxVisits: integer('max_visits'),
   createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 });
 
@@ -186,3 +188,25 @@ export const visitors = sqliteTable('visitors', {
   index('visitors_link_id_idx').on(table.linkId),
   index('visitors_created_at_idx').on(table.createdAt),
 ]);
+
+export const auditLogs = sqliteTable('audit_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  adminId: integer('admin_id').references(() => admins.id, { onDelete: 'set null' }),
+  action: text('action').notNull(),
+  targetType: text('target_type'),
+  targetId: integer('target_id'),
+  details: text('details'),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  index('audit_logs_admin_id_idx').on(table.adminId),
+  index('audit_logs_created_at_idx').on(table.createdAt),
+]);
+
+export const webhooks = sqliteTable('webhooks', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  url: text('url').notNull(),
+  events: text('events').notNull(), // JSON array
+  secret: text('secret'),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});

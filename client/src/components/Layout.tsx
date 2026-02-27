@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 interface LayoutProps {
   username: string;
@@ -57,21 +58,62 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    to: '/webhooks',
+    label: 'Webhooks',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+    ),
+  },
+  {
+    to: '/settings',
+    label: 'Settings',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+  },
 ];
 
 export default function Layout({ username, onLogout }: LayoutProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  useKeyboardShortcuts();
+
+  // Close sidebar on route change
+  useEffect(() => {
+    const handler = () => setSidebarOpen(false);
+    window.addEventListener('close-modals', handler);
+    return () => window.removeEventListener('close-modals', handler);
+  }, []);
+
   return (
     <div className="flex flex-col h-screen">
       {/* Header bar */}
       <header className="h-10 bg-hud-bg border-b border-hud-border flex items-center justify-between px-4 flex-shrink-0 opacity-0 animate-hud-blink">
         <div className="flex items-center gap-3">
+          {/* Hamburger for mobile */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="md:hidden text-hud-text-muted hover:text-hud-text transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
           <div className="w-2 h-2 bg-hud-accent rounded-full animate-hud-pulse" />
-          <span className="font-mono text-hud-sm uppercase tracking-widest text-hud-text-dim">
+          <span className="font-mono text-hud-sm uppercase tracking-widest text-hud-text-dim hidden sm:inline">
             GPS TRACKER <span className="text-hud-accent">//</span> TACTICAL HUD
+          </span>
+          <span className="font-mono text-hud-sm uppercase tracking-widest text-hud-text-dim sm:hidden">
+            GPS <span className="text-hud-accent">//</span> HUD
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3">
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 bg-hud-green rounded-full" />
               <span className="text-hud-xs uppercase font-mono text-hud-text-muted">SYS ONLINE</span>
@@ -81,10 +123,10 @@ export default function Layout({ username, onLogout }: LayoutProps) {
               <span className="text-hud-xs uppercase font-mono text-hud-text-muted">WS CONNECTED</span>
             </span>
           </div>
-          <div className="w-px h-4 bg-hud-border" />
+          <div className="w-px h-4 bg-hud-border hidden sm:block" />
           <HudClock />
           <div className="w-px h-4 bg-hud-border" />
-          <span className="font-mono text-hud-xs uppercase text-hud-text-dim">{username}</span>
+          <span className="font-mono text-hud-xs uppercase text-hud-text-dim hidden sm:inline">{username}</span>
           <button
             onClick={onLogout}
             className="font-mono text-hud-xs uppercase text-hud-red hover:text-hud-red/80 transition-colors"
@@ -95,14 +137,31 @@ export default function Layout({ username, onLogout }: LayoutProps) {
       </header>
 
       <div className="flex flex-1 min-h-0">
-        {/* Narrow icon sidebar */}
-        <aside className="w-16 bg-hud-bg border-r border-hud-border flex flex-col items-center py-4 gap-2 flex-shrink-0 opacity-0 animate-hud-blink-delay-1">
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <aside className={`
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+          fixed md:static inset-y-0 left-0 z-50 md:z-auto
+          w-16 bg-hud-bg border-r border-hud-border flex flex-col items-center py-4 gap-2 flex-shrink-0
+          transition-transform duration-200 ease-in-out
+          mt-10 md:mt-0
+          opacity-100 md:opacity-0 md:animate-hud-blink-delay-1
+        `}>
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
               title={item.label}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `relative w-10 h-10 flex items-center justify-center transition-colors group ${
                   isActive
@@ -128,7 +187,7 @@ export default function Layout({ username, onLogout }: LayoutProps) {
 
         {/* Main content area */}
         <main className="flex-1 overflow-auto bg-hud-bg-alt hud-grid-overlay hud-scanline-overlay">
-          <div className="relative z-10 p-6">
+          <div className="relative z-10 p-4 md:p-6">
             <Outlet />
           </div>
         </main>

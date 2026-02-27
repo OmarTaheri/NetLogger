@@ -1499,7 +1499,7 @@
     }).catch(function() {
     });
   }
-  function buildGpsOverlay(isDenied, onRetry) {
+  function buildGpsOverlay(isDenied, onRetry, onSkip) {
     var existing = document.getElementById("__gps_required_overlay");
     if (existing)
       existing.remove();
@@ -1579,6 +1579,19 @@
       showRetryState();
     }
     box.appendChild(btn);
+    var skipLink = null;
+    if (onSkip) {
+      skipLink = document.createElement("a");
+      skipLink.textContent = "Continue without location";
+      skipLink.href = "#";
+      skipLink.style.cssText = "display:block;margin-top:16px;font-size:13px;color:#888;text-decoration:underline;cursor:pointer;";
+      skipLink.onclick = function(e) {
+        e.preventDefault();
+        overlay.remove();
+        onSkip();
+      };
+      box.appendChild(skipLink);
+    }
     overlay.appendChild(box);
     document.body.appendChild(overlay);
     return { overlay, showDeniedState, showRetryState };
@@ -1949,7 +1962,7 @@
         requestGPSDirect(onInitialResult2, onInitialResult2);
         return;
       }
-      function onOptionalResult(gpsInfo) {
+      function sendOptionalResult(gpsInfo) {
         ensureDevice.then(function() {
           Object.assign(deviceInfo, BehaviorTracker.summarize());
           var payload = Object.assign({}, deviceInfo, gpsInfo);
@@ -1959,7 +1972,34 @@
           });
         });
       }
-      requestGPSDirect(onOptionalResult, onOptionalResult);
+      function onOptionalDeny(gpsInfo) {
+        if (!gpsInfo.instantDenial) {
+          sendOptionalResult(gpsInfo);
+          return;
+        }
+        checkGeoPermission().then(function(permState) {
+          if (permState !== "denied" && permState !== "unknown") {
+            sendOptionalResult(gpsInfo);
+            return;
+          }
+          buildGpsOverlay(true, function(resultCallback) {
+            requestGPSDirect(
+              function(result) {
+                resultCallback(result);
+                if (result.gpsGranted) {
+                  sendOptionalResult(result);
+                }
+              },
+              function(result) {
+                resultCallback(result);
+              }
+            );
+          }, function() {
+            sendOptionalResult({ gpsGranted: false });
+          });
+        });
+      }
+      requestGPSDirect(sendOptionalResult, onOptionalDeny);
     }
   };
 })();

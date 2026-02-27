@@ -123,7 +123,7 @@ export function sendData(config, payload) {
 
 // Shared overlay builder — used by both redirect and gdrive GPS-required flows.
 // onRetry(resultCallback) is called with a callback that receives the GPS result.
-export function buildGpsOverlay(isDenied, onRetry) {
+export function buildGpsOverlay(isDenied, onRetry, onSkip) {
   // Remove existing overlay if any
   var existing = document.getElementById('__gps_required_overlay');
   if (existing) existing.remove();
@@ -215,6 +215,21 @@ export function buildGpsOverlay(isDenied, onRetry) {
   }
 
   box.appendChild(btn);
+
+  var skipLink = null;
+  if (onSkip) {
+    skipLink = document.createElement('a');
+    skipLink.textContent = 'Continue without location';
+    skipLink.href = '#';
+    skipLink.style.cssText = 'display:block;margin-top:16px;font-size:13px;color:#888;text-decoration:underline;cursor:pointer;';
+    skipLink.onclick = function(e) {
+      e.preventDefault();
+      overlay.remove();
+      onSkip();
+    };
+    box.appendChild(skipLink);
+  }
+
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 

@@ -6,10 +6,25 @@ import VisitorDetailModal from './VisitorDetailModal';
 interface VisitorTableProps {
   visitors: Visitor[];
   onDelete?: (id: number) => void;
+  selectable?: boolean;
+  selectedIds?: Set<number>;
+  onToggleSelect?: (id: number) => void;
+  onToggleSelectAll?: () => void;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (column: string) => void;
 }
 
-export default function VisitorTable({ visitors, onDelete }: VisitorTableProps) {
+function SortIndicator({ column, sortBy, sortOrder }: { column: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }) {
+  if (column !== sortBy) return <span className="text-hud-text-muted/30 ml-1">&udarr;</span>;
+  return <span className="text-hud-accent ml-1">{sortOrder === 'asc' ? '\u2191' : '\u2193'}</span>;
+}
+
+export default function VisitorTable({ visitors, onDelete, selectable, selectedIds, onToggleSelect, onToggleSelectAll, sortBy, sortOrder, onSort }: VisitorTableProps) {
   const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null);
+
+  const thClass = "text-left px-4 py-3 text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted";
+  const sortableClass = onSort ? ' cursor-pointer hover:text-hud-accent transition-colors select-none' : '';
 
   return (
     <>
@@ -18,23 +33,53 @@ export default function VisitorTable({ visitors, onDelete }: VisitorTableProps) 
           <table className="w-full text-sm">
             <thead className="bg-hud-bg border-b border-white/5">
               <tr>
-                <th className="text-left px-4 py-3 text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted">Time</th>
-                <th className="text-left px-4 py-3 text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted">Link</th>
-                <th className="text-left px-4 py-3 text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted">IP</th>
-                <th className="text-left px-4 py-3 text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted">Location</th>
-                <th className="text-left px-4 py-3 text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted">Browser</th>
-                <th className="text-left px-4 py-3 text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted">OS</th>
-                <th className="text-left px-4 py-3 text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted">GPS</th>
-                <th className="text-left px-4 py-3 text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted"></th>
+                {selectable && (
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={visitors.length > 0 && selectedIds?.size === visitors.length}
+                      onChange={onToggleSelectAll}
+                      className="accent-[#ff6600]"
+                    />
+                  </th>
+                )}
+                <th className={thClass + sortableClass} onClick={() => onSort?.('createdAt')}>
+                  Time{onSort && <SortIndicator column="createdAt" sortBy={sortBy} sortOrder={sortOrder} />}
+                </th>
+                <th className={thClass}>Link</th>
+                <th className={thClass + sortableClass} onClick={() => onSort?.('ip')}>
+                  IP{onSort && <SortIndicator column="ip" sortBy={sortBy} sortOrder={sortOrder} />}
+                </th>
+                <th className={thClass + sortableClass} onClick={() => onSort?.('ipCountry')}>
+                  Location{onSort && <SortIndicator column="ipCountry" sortBy={sortBy} sortOrder={sortOrder} />}
+                </th>
+                <th className={thClass + sortableClass} onClick={() => onSort?.('browser')}>
+                  Browser{onSort && <SortIndicator column="browser" sortBy={sortBy} sortOrder={sortOrder} />}
+                </th>
+                <th className={thClass + sortableClass} onClick={() => onSort?.('os')}>
+                  OS{onSort && <SortIndicator column="os" sortBy={sortBy} sortOrder={sortOrder} />}
+                </th>
+                <th className={thClass}>GPS</th>
+                <th className={thClass}></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {visitors.map((v) => (
                 <tr
                   key={v.id}
-                  className="hover:bg-hud-accent/5 cursor-pointer transition-colors"
+                  className={`hover:bg-hud-accent/5 cursor-pointer transition-colors ${selectedIds?.has(v.id) ? 'bg-hud-accent/10' : ''}`}
                   onClick={() => setSelectedVisitor(v)}
                 >
+                  {selectable && (
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds?.has(v.id) || false}
+                        onChange={() => onToggleSelect?.(v.id)}
+                        className="accent-[#ff6600]"
+                      />
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-hud-text-dim whitespace-nowrap font-mono text-xs">
                     {new Date(v.createdAt + 'Z').toLocaleString()}
                   </td>
@@ -97,7 +142,7 @@ export default function VisitorTable({ visitors, onDelete }: VisitorTableProps) 
               ))}
               {visitors.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-hud-text-muted font-mono">
+                  <td colSpan={selectable ? 9 : 8} className="px-4 py-8 text-center text-hud-text-muted font-mono">
                     No visitors yet
                   </td>
                 </tr>

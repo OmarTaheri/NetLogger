@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getDomains, createDomain, updateDomain, deleteDomain } from '../api/domains';
 import { HudPageTitle, HudPanel, HudInput, HudButton } from '../components/ui/HudComponents';
+import { useToast } from '../hooks/useToast';
 import type { Domain } from 'shared/types';
 
 export default function DomainsPage() {
@@ -8,6 +9,7 @@ export default function DomainsPage() {
   const [newDomain, setNewDomain] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { addToast } = useToast();
 
   const loadDomains = useCallback(async () => {
     const data = await getDomains();
@@ -27,6 +29,7 @@ export default function DomainsPage() {
     try {
       await createDomain(newDomain.trim());
       setNewDomain('');
+      addToast('Domain added', 'success');
       loadDomains();
     } catch (err: any) {
       setError(err.message);

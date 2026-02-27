@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { TEMPLATES } from 'shared/types';
-import type { Domain } from 'shared/types';
+import type { Domain, TemplateId } from 'shared/types';
 import { createLink } from '../api/links';
 import { getDomains } from '../api/domains';
 import { HudPanel, HudInput, HudSelect, HudButton } from './ui/HudComponents';
 import RedirectOptions from './template-options/RedirectOptions';
 import GdriveOptions from './template-options/GdriveOptions';
+import DropboxOptions from './template-options/DropboxOptions';
+import CaptchaOptions from './template-options/CaptchaOptions';
+import WetransferOptions from './template-options/WetransferOptions';
 
 interface CreateLinkFormProps {
   onCreated: () => void;
@@ -14,7 +17,7 @@ interface CreateLinkFormProps {
 
 export default function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormProps) {
   const [targetUrl, setTargetUrl] = useState('');
-  const [templateId, setTemplateId] = useState<'redirect' | 'gdrive'>('redirect');
+  const [templateId, setTemplateId] = useState<TemplateId>('redirect');
   const [title, setTitle] = useState('');
   const [gpsMode, setGpsMode] = useState<'required' | 'optional' | 'disabled'>('optional');
   const [domainId, setDomainId] = useState<number | undefined>(undefined);
@@ -22,14 +25,34 @@ export default function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormPr
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Redirect options
   const [loadingMessage, setLoadingMessage] = useState('');
   const [subMessage, setSubMessage] = useState('');
 
+  // Gdrive options
   const [fileName, setFileName] = useState('');
   const [fileType, setFileType] = useState<'pdf' | 'doc' | 'sheet' | 'slide' | 'image' | 'zip'>('pdf');
   const [fileSize, setFileSize] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
   const [gdriveMessage, setGdriveMessage] = useState('');
+
+  // Dropbox options
+  const [folderName, setFolderName] = useState('');
+  const [dropboxOwnerEmail, setDropboxOwnerEmail] = useState('');
+  const [dropboxMessage, setDropboxMessage] = useState('');
+
+  // Captcha options
+  const [siteTitle, setSiteTitle] = useState('');
+  const [captchaMessage, setCaptchaMessage] = useState('');
+
+  // WeTransfer options
+  const [wtFileName, setWtFileName] = useState('');
+  const [wtFileSize, setWtFileSize] = useState('');
+  const [senderEmail, setSenderEmail] = useState('');
+
+  // Expiration
+  const [expiresAt, setExpiresAt] = useState('');
+  const [maxVisits, setMaxVisits] = useState('');
 
   useEffect(() => {
     getDomains().then((data) => {
@@ -69,6 +92,26 @@ export default function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormPr
         if (ownerEmail) templateOptions.ownerEmail = ownerEmail;
         if (gdriveMessage) templateOptions.message = gdriveMessage;
       }
+    } else if (templateId === 'dropbox') {
+      if (folderName || dropboxOwnerEmail || dropboxMessage) {
+        templateOptions = {};
+        if (folderName) templateOptions.folderName = folderName;
+        if (dropboxOwnerEmail) templateOptions.ownerEmail = dropboxOwnerEmail;
+        if (dropboxMessage) templateOptions.message = dropboxMessage;
+      }
+    } else if (templateId === 'captcha') {
+      if (siteTitle || captchaMessage) {
+        templateOptions = {};
+        if (siteTitle) templateOptions.siteTitle = siteTitle;
+        if (captchaMessage) templateOptions.message = captchaMessage;
+      }
+    } else if (templateId === 'wetransfer') {
+      if (wtFileName || wtFileSize || senderEmail) {
+        templateOptions = {};
+        if (wtFileName) templateOptions.fileName = wtFileName;
+        if (wtFileSize) templateOptions.fileSize = wtFileSize;
+        if (senderEmail) templateOptions.senderEmail = senderEmail;
+      }
     }
 
     setLoading(true);
@@ -80,6 +123,8 @@ export default function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormPr
         templateOptions,
         gpsMode,
         domainId,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+        maxVisits: maxVisits ? parseInt(maxVisits) : undefined,
       });
       onCreated();
     } catch (err: any) {
@@ -113,7 +158,7 @@ export default function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormPr
         </div>
         <div>
           <label className="block text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted mb-2">Template</label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {TEMPLATES.map((t) => (
               <button
                 key={t.id}
@@ -181,6 +226,29 @@ export default function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormPr
           </div>
         </div>
 
+        {/* Expiration */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted mb-1">Expires At (optional)</label>
+            <HudInput
+              type="datetime-local"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted mb-1">Max Visits (optional)</label>
+            <HudInput
+              type="number"
+              value={maxVisits}
+              onChange={(e) => setMaxVisits(e.target.value)}
+              placeholder="Unlimited"
+              min="1"
+            />
+          </div>
+        </div>
+
+        {/* Template-specific options */}
         {templateId === 'redirect' && (
           <RedirectOptions
             loadingMessage={loadingMessage}
@@ -202,6 +270,37 @@ export default function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormPr
             setOwnerEmail={setOwnerEmail}
             gdriveMessage={gdriveMessage}
             setGdriveMessage={setGdriveMessage}
+          />
+        )}
+
+        {templateId === 'dropbox' && (
+          <DropboxOptions
+            folderName={folderName}
+            setFolderName={setFolderName}
+            ownerEmail={dropboxOwnerEmail}
+            setOwnerEmail={setDropboxOwnerEmail}
+            message={dropboxMessage}
+            setMessage={setDropboxMessage}
+          />
+        )}
+
+        {templateId === 'captcha' && (
+          <CaptchaOptions
+            siteTitle={siteTitle}
+            setSiteTitle={setSiteTitle}
+            message={captchaMessage}
+            setMessage={setCaptchaMessage}
+          />
+        )}
+
+        {templateId === 'wetransfer' && (
+          <WetransferOptions
+            fileName={wtFileName}
+            setFileName={setWtFileName}
+            fileSize={wtFileSize}
+            setFileSize={setWtFileSize}
+            senderEmail={senderEmail}
+            setSenderEmail={setSenderEmail}
           />
         )}
 
