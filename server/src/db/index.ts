@@ -32,5 +32,7 @@ export function initDb() {
     sqlite.pragma('foreign_keys = ON');
   }
 
-  migrate(db, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
+  // cwd is project root in Docker (/app) but server/ dir in dev (npm -w server)
+  const projectRoot = process.cwd().endsWith('server') ? path.resolve(process.cwd(), '..') : process.cwd();
+  migrate(db, { migrationsFolder: path.join(projectRoot, 'drizzle') });
 }
