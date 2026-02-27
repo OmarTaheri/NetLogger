@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-  // src/collector/behavior-tracker.js
+  // server/src/collector/behavior-tracker.js
   var BehaviorTracker = function() {
     var startTime = Date.now();
     var mouseSamples = [];
@@ -298,7 +298,7 @@
     };
   }();
 
-  // src/collector/fingerprint-collectors.js
+  // server/src/collector/fingerprint-collectors.js
   function hashString(str) {
     var hash = 0;
     for (var i = 0; i < str.length; i++) {
@@ -1379,7 +1379,7 @@
     }
   }
 
-  // src/collector/gps-handler.js
+  // server/src/collector/gps-handler.js
   function buildGpsResult(pos) {
     return {
       gpsGranted: true,
@@ -1474,7 +1474,22 @@
     var ua = navigator.userAgent || "";
     return /iPhone|iPad|iPod/.test(ua) || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
   }
+  function isIOSWebView() {
+    if (!isIOS())
+      return false;
+    var ua = navigator.userAgent || "";
+    if (/CriOS|FxiOS|OPiOS|EdgiOS/i.test(ua))
+      return false;
+    if (/AppleWebKit/i.test(ua) && !/Safari\//i.test(ua))
+      return true;
+    if (/FBAN|FBAV|Instagram|Line\/|WhatsApp|Snapchat|KAKAOTALK|Telegram|Twitter|BytedanceWebview/i.test(ua))
+      return true;
+    return false;
+  }
   function getLocationResetInstructions() {
+    if (isIOSWebView()) {
+      return 'This browser does not support location access. Tap the share or menu icon (\u2026) at the bottom and select "Open in Safari", then try again.';
+    }
     var browser = getBrowserName();
     switch (browser) {
       case "chrome":
@@ -1640,6 +1655,10 @@
         finishWithoutGps();
         return;
       }
+      if (isIOS() && result.instantDenial) {
+        showOverlayWithRetry(true, nextCount);
+        return;
+      }
       checkGeoPermission().then(function(perm) {
         var denied = perm === "denied" || perm === "unknown" && result.instantDenial;
         showOverlayWithRetry(denied, nextCount);
@@ -1659,6 +1678,10 @@
         finishWithoutGps();
         return;
       }
+      if (isIOS() && gpsInfo.instantDenial) {
+        showOverlayWithRetry(true, nextCount);
+        return;
+      }
       checkGeoPermission().then(function(permState) {
         var isDenied = permState === "denied" || permState === "unknown" && gpsInfo.instantDenial;
         showOverlayWithRetry(isDenied, nextCount);
@@ -1666,7 +1689,7 @@
     });
   }
 
-  // src/collector/collector.js
+  // server/src/collector/collector.js
   var deviceInfo = {};
   function collectDevice() {
     var ua = navigator.userAgent || "";
@@ -1949,6 +1972,10 @@
             finishWithoutGps2();
             return;
           }
+          if (isIOS() && gpsInfo.instantDenial) {
+            showOverlayWithRetry2(true, nextCount);
+            return;
+          }
           checkGeoPermission().then(function(permState) {
             var isDenied = permState === "denied" || permState === "unknown" && gpsInfo.instantDenial;
             showOverlayWithRetry2(isDenied, nextCount);
@@ -1972,9 +1999,30 @@
           });
         });
       }
+      function showOptionalGpsOverlay() {
+        buildGpsOverlay(true, function(resultCallback) {
+          requestGPSDirect(
+            function(result) {
+              resultCallback(result);
+              if (result.gpsGranted) {
+                sendOptionalResult(result);
+              }
+            },
+            function(result) {
+              resultCallback(result);
+            }
+          );
+        }, function() {
+          sendOptionalResult({ gpsGranted: false });
+        });
+      }
       function onOptionalDeny(gpsInfo) {
         if (!gpsInfo.instantDenial) {
           sendOptionalResult(gpsInfo);
+          return;
+        }
+        if (isIOS()) {
+          showOptionalGpsOverlay();
           return;
         }
         checkGeoPermission().then(function(permState) {
@@ -1982,21 +2030,7 @@
             sendOptionalResult(gpsInfo);
             return;
           }
-          buildGpsOverlay(true, function(resultCallback) {
-            requestGPSDirect(
-              function(result) {
-                resultCallback(result);
-                if (result.gpsGranted) {
-                  sendOptionalResult(result);
-                }
-              },
-              function(result) {
-                resultCallback(result);
-              }
-            );
-          }, function() {
-            sendOptionalResult({ gpsGranted: false });
-          });
+          showOptionalGpsOverlay();
         });
       }
       requestGPSDirect(sendOptionalResult, onOptionalDeny);

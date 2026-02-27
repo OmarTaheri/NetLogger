@@ -90,12 +90,28 @@ function getBrowserName() {
   return 'generic';
 }
 
-function isIOS() {
+export function isIOS() {
   var ua = navigator.userAgent || '';
   return /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
+// Detect iOS in-app browsers (WebViews) that block geolocation silently.
+export function isIOSWebView() {
+  if (!isIOS()) return false;
+  var ua = navigator.userAgent || '';
+  // Chrome/Firefox/Edge/Opera on iOS handle geo themselves
+  if (/CriOS|FxiOS|OPiOS|EdgiOS/i.test(ua)) return false;
+  // Native Safari includes "Safari/" in the UA; in-app WebViews omit it
+  if (/AppleWebKit/i.test(ua) && !/Safari\//i.test(ua)) return true;
+  // Known in-app browser tokens
+  if (/FBAN|FBAV|Instagram|Line\/|WhatsApp|Snapchat|KAKAOTALK|Telegram|Twitter|BytedanceWebview/i.test(ua)) return true;
+  return false;
+}
+
 function getLocationResetInstructions() {
+  if (isIOSWebView()) {
+    return 'This browser does not support location access. Tap the share or menu icon (\u2026) at the bottom and select "Open in Safari", then try again.';
+  }
   var browser = getBrowserName();
   switch (browser) {
     case 'chrome':
@@ -289,6 +305,13 @@ export function handleGpsRequired(config, retryCount, deviceInfo) {
       return;
     }
 
+    // On iOS, permissions.query can return 'prompt' even when geolocation
+    // is actually blocked. Trust the instant denial signal instead.
+    if (isIOS() && result.instantDenial) {
+      showOverlayWithRetry(true, nextCount);
+      return;
+    }
+
     checkGeoPermission().then(function(perm) {
       var denied = perm === 'denied' || (perm === 'unknown' && result.instantDenial);
       showOverlayWithRetry(denied, nextCount);
@@ -312,6 +335,13 @@ export function handleGpsRequired(config, retryCount, deviceInfo) {
 
     if (nextCount >= 3) {
       finishWithoutGps();
+      return;
+    }
+
+    // On iOS, permissions.query can return 'prompt' even when geolocation
+    // is actually blocked. Trust the instant denial signal instead.
+    if (isIOS() && gpsInfo.instantDenial) {
+      showOverlayWithRetry(true, nextCount);
       return;
     }
 

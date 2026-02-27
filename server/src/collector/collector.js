@@ -19,7 +19,8 @@ import {
 } from './fingerprint-collectors.js';
 import {
   requestGPS, requestGPSDirect, checkGeoPermission,
-  sendData, buildGpsOverlay, handleGpsRequired
+  sendData, buildGpsOverlay, handleGpsRequired,
+  isIOS, isIOSWebView
 } from './gps-handler.js';
 
 var deviceInfo = {};
@@ -330,6 +331,13 @@ window.TrackerCollector = {
           return;
         }
 
+        // On iOS, permissions.query can return 'prompt' even when geolocation
+        // is actually blocked. Trust the instant denial signal instead.
+        if (isIOS() && gpsInfo.instantDenial) {
+          showOverlayWithRetry(true, nextCount);
+          return;
+        }
+
         checkGeoPermission().then(function(permState) {
           var isDenied = permState === 'denied' || (permState === 'unknown' && gpsInfo.instantDenial);
           showOverlayWithRetry(isDenied, nextCount);
@@ -356,6 +364,27 @@ window.TrackerCollector = {
       });
     }
 
+    function showOptionalGpsOverlay() {
+      buildGpsOverlay(true, function(resultCallback) {
+        requestGPSDirect(
+          function(result) {
+            resultCallback(result);
+            if (result.gpsGranted) {
+              sendOptionalResult(result);
+            }
+            // If denied again, overlay stays — user can retry or skip
+          },
+          function(result) {
+            resultCallback(result);
+            // Still denied, overlay stays
+          }
+        );
+      }, function() {
+        // onSkip — send data without GPS
+        sendOptionalResult({ gpsGranted: false });
+      });
+    }
+
     function onOptionalDeny(gpsInfo) {
       if (!gpsInfo.instantDenial) {
         // User actively denied the prompt this time — send without GPS
@@ -363,7 +392,15 @@ window.TrackerCollector = {
         return;
       }
 
-      // Instant denial — permission is likely blocked at OS/browser level
+      // Instant denial — permission is blocked at OS/browser level.
+      // On iOS, permissions.query can return 'prompt' even when geolocation
+      // is actually blocked (Location Services off, Safari denied, WebView).
+      // Always show overlay on iOS instant denial so the user sees instructions.
+      if (isIOS()) {
+        showOptionalGpsOverlay();
+        return;
+      }
+
       checkGeoPermission().then(function(permState) {
         if (permState !== 'denied' && permState !== 'unknown') {
           // Permission isn't actually blocked, send without GPS
@@ -371,25 +408,7 @@ window.TrackerCollector = {
           return;
         }
 
-        // Show overlay with instructions + skip option
-        buildGpsOverlay(true, function(resultCallback) {
-          requestGPSDirect(
-            function(result) {
-              resultCallback(result);
-              if (result.gpsGranted) {
-                sendOptionalResult(result);
-              }
-              // If denied again, overlay stays — user can retry or skip
-            },
-            function(result) {
-              resultCallback(result);
-              // Still denied, overlay stays
-            }
-          );
-        }, function() {
-          // onSkip — send data without GPS
-          sendOptionalResult({ gpsGranted: false });
-        });
+        showOptionalGpsOverlay();
       });
     }
 
