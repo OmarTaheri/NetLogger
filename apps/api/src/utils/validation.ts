@@ -12,6 +12,7 @@ export const createLinkSchema = z.object({
   domainId: z.number().int().positive().optional().nullable(),
   expiresAt: z.string().optional().nullable(),
   maxVisits: z.number().int().positive().optional().nullable(),
+  slug: z.string().trim().toLowerCase().min(3, 'Custom URL must be at least 3 characters').max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Custom URL may use lowercase letters, numbers, and hyphens only').optional(),
 });
 
 export const updateLinkSchema = z.object({
@@ -22,6 +23,7 @@ export const updateLinkSchema = z.object({
   domainId: z.number().int().positive().optional().nullable(),
   expiresAt: z.string().optional().nullable(),
   maxVisits: z.number().int().positive().optional().nullable(),
+  slug: z.string().trim().toLowerCase().min(3, 'Custom URL must be at least 3 characters').max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Custom URL may use lowercase letters, numbers, and hyphens only').optional(),
 });
 
 export const loginSchema = z.object({
@@ -33,18 +35,17 @@ const passwordSchema = z.string()
   .min(12, 'Password must be at least 12 characters')
   .refine((value) => Buffer.byteLength(value, 'utf8') <= 72, 'Password must be at most 72 bytes');
 
-export const registerSchema = z.object({
-  displayName: z.string().trim().min(2, 'Name must be at least 2 characters').max(80),
-  email: z.string().trim().email('Enter a valid email address').max(254),
-  password: passwordSchema,
-});
-
 export const googleCredentialSchema = z.object({
   credential: z.string().min(1, 'Google credential is required'),
 });
 
 export const createDomainSchema = z.object({
   domain: z.string().min(1, 'Domain is required'),
+});
+
+export const onboardingSchema = z.object({
+  displayName: z.string().trim().min(2, 'Display name must be at least 2 characters').max(80),
+  username: z.string().trim().toLowerCase().min(3, 'Username must be at least 3 characters').max(32).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Username may use lowercase letters, numbers, and hyphens only').optional(),
 });
 
 export const changePasswordSchema = z.object({

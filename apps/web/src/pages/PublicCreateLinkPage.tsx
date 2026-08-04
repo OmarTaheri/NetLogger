@@ -4,6 +4,7 @@ import { TEMPLATES, type Domain, type TemplateId } from '@netlogger/shared/types
 import { createGuestLink, getGuestLinkConfig, type GuestLinkConfig, type GuestTemplateId } from '../api/publicLinks';
 import { createLink } from '../api/links';
 import { getDomains } from '../api/domains';
+import { getTemplatePreview } from '../api/templates';
 import { useAuth } from '../hooks/useAuth';
 
 const fallbackConfig: GuestLinkConfig = {
@@ -57,6 +58,7 @@ export default function PublicCreateLinkPage() {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [templateId, setTemplateId] = useState<TemplateId>('redirect');
   const [title, setTitle] = useState('Campaign signal');
+  const [slug, setSlug] = useState('');
   const [targetUrl, setTargetUrl] = useState('');
   const [gpsMode, setGpsMode] = useState<'required' | 'optional' | 'disabled'>('optional');
   const [domainId, setDomainId] = useState<number | undefined>();
@@ -76,6 +78,8 @@ export default function PublicCreateLinkPage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<CreatedSignal | null>(null);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(true);
 
   useEffect(() => {
     getGuestLinkConfig().then(setConfig).catch(() => {});
@@ -98,7 +102,7 @@ export default function PublicCreateLinkPage() {
     [templateId],
   );
   const selectedDomain = domains.find((domain) => domain.id === domainId)?.domain || config.defaultDomain;
-  const displaySlug = created?.slug || 'signal-preview';
+  const displaySlug = created?.slug || slug || 'signal-preview';
 
   const templateOptions = (): Record<string, string> => {
     if (templateId === 'redirect') return { loadingMessage, subMessage };
@@ -107,6 +111,25 @@ export default function PublicCreateLinkPage() {
     if (templateId === 'dropbox') return { folderName, ownerEmail, message: dropboxMessage };
     return { fileName, fileSize, senderEmail };
   };
+
+  useEffect(() => {
+    let active = true;
+    setPreviewLoading(true);
+    getTemplatePreview(templateId, templateOptions())
+      .then(({ html }) => {
+        if (active) setPreviewHtml(html);
+      })
+      .catch(() => {
+        if (active) setPreviewHtml('');
+      })
+      .finally(() => {
+        if (active) setPreviewLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [templateId, loadingMessage, subMessage, siteTitle, captchaMessage, fileName, fileType, fileSize, ownerEmail, folderName, dropboxMessage, senderEmail]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -130,6 +153,7 @@ export default function PublicCreateLinkPage() {
           targetUrl,
           templateId,
           title: title || undefined,
+          slug: slug.trim() || undefined,
           templateOptions: templateOptions(),
           gpsMode,
           domainId,
@@ -158,14 +182,6 @@ export default function PublicCreateLinkPage() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const preview = () => {
-    if (templateId === 'redirect') return <><i className="preview-spinner" /><strong>{loadingMessage || 'Signal acquired'}</strong><p>{subMessage || 'Opening your destination'}</p></>;
-    if (templateId === 'captcha') return <><span className="preview-shield">+</span><strong>{siteTitle || 'Human verification'}</strong><p>{captchaMessage || 'Confirm you are human to continue.'}</p><button type="button"><i /> I AM HUMAN <small>NETLOGGER</small></button></>;
-    if (templateId === 'gdrive') return <><span className="preview-brand preview-brand--drive">D</span><small>GOOGLE DRIVE</small><strong>{fileName || 'Shared file'}</strong><p>{fileSize || 'File ready'} · Shared by {ownerEmail || 'a collaborator'}</p><button type="button">OPEN FILE</button></>;
-    if (templateId === 'dropbox') return <><span className="preview-brand preview-brand--dropbox">DB</span><small>DROPBOX</small><strong>{folderName || 'Shared folder'}</strong><p>{dropboxMessage || 'A folder was shared with you.'}</p><button type="button">VIEW FOLDER</button></>;
-    return <><span className="preview-brand preview-brand--transfer">WT</span><small>WETRANSFER</small><strong>{fileName || 'Your files are ready'}</strong><p>{fileSize || 'Transfer'} · From {senderEmail || 'a sender'}</p><button type="button">DOWNLOAD</button></>;
   };
 
   return (
@@ -207,6 +223,7 @@ export default function PublicCreateLinkPage() {
               <p>02 / CONFIGURE</p>
               <h2>Signal info</h2>
               <div className="quick-field"><label htmlFor="quick-title">INTERNAL TITLE</label><input id="quick-title" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={80} placeholder="Campaign signal" /></div>
+              {accountMode && <div className="quick-field"><label htmlFor="quick-slug">CUSTOM LINK PATH (OPTIONAL)</label><input id="quick-slug" value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase())} minLength={3} maxLength={80} pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="summer-campaign" /><small>Lowercase letters, numbers, and hyphens. This path is reserved so no other account can use it.</small></div>}
               <div className="quick-field"><label htmlFor="quick-target">DESTINATION URL</label><input id="quick-target" type="url" value={targetUrl} onChange={(event) => setTargetUrl(event.target.value)} placeholder="https://example.com/landing" required /></div>
               {templateId === 'redirect' && <div className="quick-field-grid"><div className="quick-field"><label htmlFor="quick-loading">PRIMARY MESSAGE</label><input id="quick-loading" value={loadingMessage} onChange={(event) => setLoadingMessage(event.target.value)} maxLength={80} /></div><div className="quick-field"><label htmlFor="quick-sub">SECONDARY MESSAGE</label><input id="quick-sub" value={subMessage} onChange={(event) => setSubMessage(event.target.value)} maxLength={120} /></div></div>}
               {templateId === 'captcha' && <div className="quick-field-grid"><div className="quick-field"><label htmlFor="quick-site-title">CHECK TITLE</label><input id="quick-site-title" value={siteTitle} onChange={(event) => setSiteTitle(event.target.value)} maxLength={70} /></div><div className="quick-field"><label htmlFor="quick-captcha-message">CHECK MESSAGE</label><input id="quick-captcha-message" value={captchaMessage} onChange={(event) => setCaptchaMessage(event.target.value)} maxLength={150} /></div></div>}
@@ -232,7 +249,16 @@ export default function PublicCreateLinkPage() {
                 <div className="quick-preview__tabs"><span className="chrome-window-dots"><i /><i /><i /></span><div className="chrome-active-tab"><span>{selectedTemplate.name}</span><b>×</b></div><em>+</em></div>
                 <div className="quick-preview__toolbar"><span>←</span><span>→</span><span>↻</span><code><b>⌁</b> https://{selectedDomain}/t/{templateId}/{displaySlug}</code><span>☆</span><span>⋮</span></div>
               </div>
-              <div className={`quick-preview__surface quick-preview__surface--${templateId}`}>{preview()}</div>
+              <div className="quick-preview__surface">
+                {previewHtml ? (
+                  <iframe
+                    title={`${selectedTemplate.name} live preview`}
+                    className="quick-preview__frame"
+                    sandbox=""
+                    srcDoc={previewHtml}
+                  />
+                ) : <div className="quick-preview__state">{previewLoading ? 'RENDERING TEMPLATE...' : 'PREVIEW UNAVAILABLE'}</div>}
+              </div>
             </div>
             <div className="quick-preview__meta"><span><i /> TEMPLATE</span><strong>{templateId.toUpperCase()}</strong><span><i /> DOMAIN</span><strong>{selectedDomain}</strong><span><i /> LOCATION</span><strong>{gpsMode === 'disabled' ? 'WITHOUT' : gpsMode === 'required' ? 'FORCED' : 'OPTIONAL'}</strong></div>
             <div className="quick-preview__locked"><span>{accountMode ? 'ACCOUNT CONFIGURATION' : 'ACCOUNT MODE ADDS'}</span>{(accountMode ? ['Full analytics','Private ownership','Live visitor feed','Export ready'] : ['Custom domains','Required GPS','Five templates','No expiry','Full analytics']).map((item) => <i key={item}>{item}</i>)}</div>

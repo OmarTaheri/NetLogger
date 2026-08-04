@@ -18,6 +18,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminDomainsPage from './pages/AdminDomainsPage';
 import AdminLayout from './components/AdminLayout';
+import OnboardingPage from './pages/OnboardingPage';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 
@@ -30,6 +31,7 @@ function Protected({ children }: { children: ReactNode }) {
   const location = useLocation();
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+  if (!user.onboardingCompleted) return <Navigate to="/onboarding" replace />;
   return children;
 }
 
@@ -38,6 +40,7 @@ function UserOnly({ children }: { children: ReactNode }) {
   const location = useLocation();
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+  if (!user.onboardingCompleted) return <Navigate to="/onboarding" replace />;
   if (user.role !== 'user') return <Navigate to="/admin" replace />;
   return children;
 }
@@ -45,7 +48,7 @@ function UserOnly({ children }: { children: ReactNode }) {
 function PublicOnly({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <LoadingScreen />;
-  return user ? <Navigate to={user.role === 'admin' ? '/admin' : '/app'} replace /> : children;
+  return user ? <Navigate to={user.onboardingCompleted ? (user.role === 'admin' ? '/admin' : '/app') : '/onboarding'} replace /> : children;
 }
 
 function AdminOnly({ children }: { children: ReactNode }) {
@@ -53,6 +56,7 @@ function AdminOnly({ children }: { children: ReactNode }) {
   const location = useLocation();
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+  if (!user.onboardingCompleted) return <Navigate to="/onboarding" replace />;
   if (user.role !== 'admin') return <Navigate to="/app" replace />;
   return children;
 }
@@ -62,6 +66,13 @@ function LegacyLinkRedirect() {
   return <Navigate to={`/app/links/${id}`} replace />;
 }
 
+function OnboardingOnly({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/login" replace />;
+  return user.onboardingCompleted ? <Navigate to={user.role === 'admin' ? '/admin' : '/app'} replace /> : children;
+}
+
 export default function App() {
   const { user, logout } = useAuth();
   return (
@@ -69,6 +80,7 @@ export default function App() {
       <Route path="/" element={<Suspense fallback={<LoadingScreen />}><LandingPage /></Suspense>} />
       <Route path="/login" element={<PublicOnly><LoginPage /></PublicOnly>} />
       <Route path="/signup" element={<PublicOnly><SignupPage /></PublicOnly>} />
+      <Route path="/onboarding" element={<OnboardingOnly><OnboardingPage /></OnboardingOnly>} />
       <Route path="/create" element={<Layout displayName={user?.displayName || 'Guest operator'} onLogout={user ? logout : undefined} guestMode={!user}><PublicCreateLinkPage /></Layout>} />
       <Route path="/create/results/:slug" element={<GuestResultsPage />} />
 

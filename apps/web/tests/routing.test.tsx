@@ -9,9 +9,9 @@ vi.mock('../src/api/auth', () => ({
   getMe: vi.fn(),
   getAuthConfig: vi.fn(),
   login: vi.fn(),
-  register: vi.fn(),
   googleSignIn: vi.fn(),
   linkGoogle: vi.fn(),
+  completeOnboarding: vi.fn(),
   logout: vi.fn(),
 }));
 
@@ -33,6 +33,10 @@ vi.mock('../src/api/domains', () => ({
   getDomains: vi.fn().mockResolvedValue([
     { id: 7, domain: 'signals.example.test', isActive: true, createdAt: '2026-08-02T00:00:00.000Z' },
   ]),
+}));
+
+vi.mock('../src/api/templates', () => ({
+  getTemplatePreview: vi.fn().mockResolvedValue({ html: '<!doctype html><html><body>Template preview</body></html>' }),
 }));
 
 const mockedAuth = vi.mocked(authApi);
@@ -109,6 +113,7 @@ describe('application route guards', () => {
     expect(screen.getByText('Guest operator')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Dashboard — account required/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Google Drive — account required/i })).toBeDisabled();
+    expect(await screen.findByTitle('Redirect live preview')).toHaveAttribute('sandbox', '');
     expect(screen.getByTestId('location')).toHaveTextContent('/create');
   });
 
@@ -118,6 +123,7 @@ describe('application route guards', () => {
       email: 'operator@example.test',
       displayName: 'Signal Operator',
       role: 'user',
+      onboardingCompleted: true,
       providers: ['password'],
     });
 
@@ -140,6 +146,7 @@ describe('application route guards', () => {
       email: 'admin@netlogger.local',
       displayName: 'Administrator',
       role: 'admin',
+      onboardingCompleted: true,
       providers: ['password'],
     });
 
@@ -155,6 +162,7 @@ describe('application route guards', () => {
       email: 'admin@netlogger.local',
       displayName: 'Administrator',
       role: 'admin',
+      onboardingCompleted: true,
       providers: ['password'],
     });
     mockedAuth.logout.mockResolvedValue({ ok: true });
@@ -164,5 +172,20 @@ describe('application route guards', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Logout' }));
     expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
     expect(screen.getByTestId('location')).toHaveTextContent('/login');
+  });
+
+  it('sends a new Google account to onboarding before the workspace', async () => {
+    mockedAuth.getMe.mockResolvedValue({
+      id: 23,
+      email: 'new@example.test',
+      displayName: 'New Operator',
+      role: 'user',
+      onboardingCompleted: false,
+      providers: ['google'],
+    });
+
+    renderAt('/app');
+    expect(await screen.findByRole('heading', { name: 'Make it yours' })).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('/onboarding');
   });
 });

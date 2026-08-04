@@ -483,7 +483,7 @@ export default function LandingPage() {
             <p>NetLogger turns an anonymous click into a live, structured intelligence record—without forcing operators to stitch signals together by hand.</p>
             <div><strong>LOCATION</strong><strong>DEVICE</strong><strong>NETWORK</strong><strong>BEHAVIOR</strong><strong>RISK</strong></div>
           </div>
-          <div className="signal-marquee"><span>GPS / IP / CANVAS / WEBGL / AUDIO / BOT SCORE / VPN / HUMANITY / WEBHOOKS / </span><span>GPS / IP / CANVAS / WEBGL / AUDIO / BOT SCORE / VPN / HUMANITY / WEBHOOKS / </span></div>
+          <div className="signal-marquee"><div className="signal-marquee__track"><span>GPS / IP / CANVAS / WEBGL / AUDIO / BOT SCORE / VPN / HUMANITY / WEBHOOKS / </span><span>GPS / IP / CANVAS / WEBGL / AUDIO / BOT SCORE / VPN / HUMANITY / WEBHOOKS / </span></div></div>
         </section>
 
         <section id="capabilities" className="workflow-section">

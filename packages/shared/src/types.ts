@@ -32,6 +32,15 @@ export interface Domain {
   id: number;
   domain: string;
   isActive: boolean;
+  verificationStatus: 'pending' | 'verified' | 'failed';
+  verificationToken: string;
+  verificationError: string | null;
+  verifiedAt: string | null;
+  verification: {
+    recordName: string;
+    recordValue: string;
+    cnameTarget: string | null;
+  };
   createdAt: string;
 }
 
@@ -64,6 +73,7 @@ export interface CreateLinkInput {
   domainId?: number;
   expiresAt?: string | null;
   maxVisits?: number | null;
+  slug?: string;
 }
 
 export interface Visitor {

@@ -14,9 +14,10 @@ export async function createLink(
   gpsMode?: string,
   domainId?: number,
   expiresAt?: string | null,
-  maxVisits?: number | null
+  maxVisits?: number | null,
+  customSlug?: string,
 ) {
-  const slug = nanoid(8);
+  const slug = customSlug || nanoid(8);
   const result = (await db.insert(links).values({
     userId,
     slug,
@@ -52,6 +53,7 @@ export async function updateLink(userId: number, id: number, data: {
   domainId?: number | null;
   expiresAt?: string | null;
   maxVisits?: number | null;
+  slug?: string;
 }) {
   return (await db.update(links).set(data).where(and(eq(links.id, id), eq(links.userId, userId))).returning())[0];
 }
@@ -70,7 +72,7 @@ export async function incrementVisitCount(id: number) {
 export async function getTrackingUrl(link: { userId: number; templateId: string; slug: string; domainId: number | null }, baseUrl = config.baseUrl) {
   if (link.domainId) {
     const domain = await domainService.getDomainById(link.domainId, link.userId);
-    if (domain && domain.isActive) {
+    if (domain && domain.isActive && domain.verificationStatus === 'verified') {
       return `https://${domain.domain}/t/${link.templateId}/${link.slug}`;
     }
   }

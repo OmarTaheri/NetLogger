@@ -6,9 +6,9 @@ interface AuthContextValue {
   config: authApi.AuthConfig;
   loading: boolean;
   login: (identifier: string, password: string) => Promise<authApi.User>;
-  register: (displayName: string, email: string, password: string) => Promise<authApi.User>;
   googleSignIn: (credential: string) => Promise<authApi.User>;
   linkGoogle: (credential: string) => Promise<authApi.User>;
+  completeOnboarding: (displayName: string, username?: string) => Promise<authApi.User>;
   logout: () => Promise<void>;
 }
 
@@ -30,12 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (identifier: string, password: string) => {
     const nextUser = await authApi.login(identifier, password);
-    setUser(nextUser);
-    return nextUser;
-  }, []);
-
-  const register = useCallback(async (displayName: string, email: string, password: string) => {
-    const nextUser = await authApi.register(displayName, email, password);
     setUser(nextUser);
     return nextUser;
   }, []);
@@ -62,8 +56,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const value = useMemo(() => ({ user, config, loading, login, register, googleSignIn, linkGoogle, logout }),
-    [user, config, loading, login, register, googleSignIn, linkGoogle, logout]);
+  const completeOnboarding = useCallback(async (displayName: string, username?: string) => {
+    const nextUser = await authApi.completeOnboarding(displayName, username);
+    setUser(nextUser);
+    return nextUser;
+  }, []);
+
+  const value = useMemo(() => ({ user, config, loading, login, googleSignIn, linkGoogle, completeOnboarding, logout }),
+    [user, config, loading, login, googleSignIn, linkGoogle, completeOnboarding, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

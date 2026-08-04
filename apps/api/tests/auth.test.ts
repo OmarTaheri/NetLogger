@@ -35,35 +35,13 @@ describe('Auth Routes', () => {
     });
   });
 
-  it('POST /api/auth/register - normalizes email and starts a private session', async () => {
+  it('does not expose an email-and-password registration endpoint', async () => {
     const res = await request(app).post('/api/auth/register').send({
       displayName: 'Signal Operator',
-      email: '  Operator@Example.COM ',
+      email: 'operator@example.com',
       password: 'correct-horse-battery',
     });
-
-    expect(res.status).toBe(201);
-    expect(res.body.email).toBe('operator@example.com');
-    expect(res.body.providers).toEqual(['password']);
-    expect(res.headers['set-cookie'][0]).toContain('HttpOnly');
-    expect(res.headers['set-cookie'][0]).toContain('SameSite=Strict');
-  });
-
-  it('POST /api/auth/register - rejects normalized duplicate emails and short passwords', async () => {
-    const duplicate = await request(app).post('/api/auth/register').send({
-      displayName: 'Duplicate Operator',
-      email: 'OPERATOR@example.com',
-      password: 'correct-horse-battery',
-    });
-    expect(duplicate.status).toBe(409);
-    expect(duplicate.body.code).toBe('EMAIL_EXISTS');
-
-    const short = await request(app).post('/api/auth/register').send({
-      displayName: 'Short Password',
-      email: 'short@example.com',
-      password: 'too-short',
-    });
-    expect(short.status).toBe(400);
+    expect(res.status).toBe(404);
   });
 
   it('POST /api/auth/login - should login successfully', async () => {
@@ -171,10 +149,20 @@ describe('Auth Routes', () => {
     expect(created.status).toBe(200);
     expect(created.body.email).toBe('google@example.com');
     expect(created.body.providers).toEqual(['google']);
+    expect(created.body.onboardingCompleted).toBe(false);
 
     const returning = await request(app).post('/api/auth/google').send({ credential: 'valid-returning' });
     expect(returning.status).toBe(200);
     expect(returning.body.id).toBe(created.body.id);
+
+    const onboarded = await request(app)
+      .patch('/api/auth/onboarding')
+      .set('Cookie', created.headers['set-cookie'])
+      .send({ displayName: 'Signal Operator', username: 'signal-operator' });
+    expect(onboarded.status).toBe(200);
+    expect(onboarded.body.displayName).toBe('Signal Operator');
+    expect(onboarded.body.username).toBe('signal-operator');
+    expect(onboarded.body.onboardingCompleted).toBe(true);
 
     const invalid = await request(app).post('/api/auth/google').send({ credential: 'invalid-or-expired' });
     expect(invalid.status).toBe(401);
@@ -182,6 +170,8 @@ describe('Auth Routes', () => {
   });
 
   it('POST /api/auth/google - requires explicit linking for an existing password email', async () => {
+    const passwordHash = await bcrypt.hash('existing-password-account', 10);
+    await db.insert(users).values({ displayName: 'Existing Operator', email: 'operator@example.com', passwordHash });
     vi.spyOn(OAuth2Client.prototype, 'verifyIdToken').mockResolvedValue({
       getPayload: () => ({
         sub: 'password-account-google-sub',
