@@ -1,18 +1,42 @@
 services:
-  tracker:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-netlogger}
+      POSTGRES_USER: ${POSTGRES_USER:-netlogger}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - netlogger-postgres:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  netlogger:
     build: .
-    expose:
-      - "3000"
+    ports:
+      - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
       - SESSION_SECRET=${SESSION_SECRET:-change-this-to-a-random-secret}
-      - DATABASE_PATH=/data/tracker.db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-netlogger}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-netlogger}
+      - DEFAULT_USER_EMAIL=${DEFAULT_USER_EMAIL:-user@netlogger.local}
+      - DEFAULT_USER_PASSWORD=${DEFAULT_USER_PASSWORD:-User12345678!}
+      - DEFAULT_USER_DISPLAY_NAME=${DEFAULT_USER_DISPLAY_NAME:-Demo User}
+      - SHOW_DEMO_ACCOUNTS=${SHOW_DEMO_ACCOUNTS:-false}
       - BASE_URL=${BASE_URL:-http://localhost:3000}
-    volumes:
-      - tracker-data:/data
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
@@ -22,4 +46,4 @@ services:
       retries: 3
 
 volumes:
-  tracker-data:
+  netlogger-postgres:

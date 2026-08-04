@@ -4,21 +4,20 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json ./
-COPY server/package.json ./server/
-COPY client/package.json ./client/
-COPY shared/package.json ./shared/
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+COPY packages/shared/package.json ./packages/shared/
 
 RUN npm ci
 
 # Copy source
-COPY shared/ ./shared/
-COPY server/ ./server/
-COPY client/ ./client/
+COPY apps/ ./apps/
+COPY packages/ ./packages/
+COPY database/ ./database/
 COPY tsconfig.json ./
 COPY drizzle.config.ts ./
-COPY drizzle/ ./drizzle/
 
-# Build everything (client + server + collector)
+# Build the web app, API, and browser collector.
 RUN npm run build
 
 # Production stage
@@ -29,22 +28,19 @@ RUN apk add --no-cache curl
 WORKDIR /app
 
 COPY --from=builder /app/package.json /app/package-lock.json ./
-COPY --from=builder /app/server/dist/ ./server/dist/
-COPY --from=builder /app/server/static/ ./server/static/
-COPY --from=builder /app/server/package.json ./server/
-COPY --from=builder /app/shared/ ./shared/
-COPY --from=builder /app/drizzle/ ./drizzle/
+COPY --from=builder /app/apps/api/dist/ ./apps/api/dist/
+COPY --from=builder /app/apps/api/static/ ./apps/api/static/
+COPY --from=builder /app/apps/api/package.json ./apps/api/
+COPY --from=builder /app/apps/api/node_modules/ ./apps/api/node_modules/
+COPY --from=builder /app/packages/shared/ ./packages/shared/
+COPY --from=builder /app/database/ ./database/
 COPY --from=builder /app/node_modules/ ./node_modules/
 
-RUN mkdir -p /data
-
-ENV DATABASE_PATH=/data/tracker.db
 ENV NODE_ENV=production
 
-VOLUME /data
 EXPOSE 3000
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3000/api/health || exit 1
 
-CMD ["node", "server/dist/server/src/index.js"]
+CMD ["node", "apps/api/dist/index.js"]

@@ -1,7 +1,12 @@
 node_modules
+**/dist
+apps/api/static/web
 data
 .env
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
 .git
 .claude
+legacy

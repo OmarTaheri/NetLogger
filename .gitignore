@@ -1,6 +1,11 @@
 node_modules/
-dist/
+**/dist/
+apps/api/static/web/
+apps/api/static/collector.js
 /data/
 .env
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
+*.log

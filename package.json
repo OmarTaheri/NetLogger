@@ -1,21 +1,28 @@
 {
-  "name": "gps-tracker",
+  "name": "netlogger",
   "private": true,
-  "workspaces": ["server", "client", "shared"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "npm run dev -w server",
-    "dev:client": "npm run dev -w client",
-    "build": "npm run build:client && npm run build:server",
-    "build:server": "npm run build -w server",
-    "build:client": "npm run build -w client",
-    "start": "node server/dist/index.js",
+    "dev": "npm run build:collector && concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "tsx watch apps/api/src/index.ts",
+    "dev:web": "vite --config apps/web/vite.config.ts",
+    "build": "npm run build:web && npm run build:api",
+    "build:api": "tsc -p apps/api/tsconfig.json && npm run build:collector",
+    "build:web": "vite build --config apps/web/vite.config.ts",
+    "build:collector": "node apps/api/src/tracking-collector/build.js",
+    "test": "npm run test:api && npm run test:web",
+    "test:api": "vitest run --config apps/api/vitest.config.ts",
+    "test:web": "vitest run --config apps/web/vitest.config.ts",
+    "start": "node apps/api/dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
-    "drizzle-kit": "^0.30.4",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5.7.0"
   }
 }
