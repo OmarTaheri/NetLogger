@@ -6,7 +6,6 @@ import { authMiddleware, userMiddleware, AuthRequest } from '../middleware/auth.
 import { asyncHandler } from '../utils/asyncHandler.js';
 import {
   loginSchema,
-  adminLoginSchema,
   registerSchema,
   googleCredentialSchema,
   changePasswordSchema,
@@ -90,31 +89,13 @@ router.post('/login', loginLimiter, asyncHandler(async (req, res) => {
   }
 
   const user = await authService.getUserByIdentifier(parsed.data.identifier);
-  if (!user?.passwordHash || user.role !== 'user' || !(await authService.verifyPassword(parsed.data.password, user.passwordHash))) {
+  if (!user?.passwordHash || !(await authService.verifyPassword(parsed.data.password, user.passwordHash))) {
     res.status(401).json({ error: 'Invalid credentials' });
     return;
   }
 
   setSession(res, user);
   await auditService.logAction(user.id, 'auth.login');
-  res.json(authService.toPublicUser(user));
-}));
-
-router.post('/admin/login', loginLimiter, asyncHandler(async (req, res) => {
-  const parsed = adminLoginSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: getValidationError(parsed) });
-    return;
-  }
-
-  const user = await authService.getAdminByEmail(parsed.data.email);
-  if (!user?.passwordHash || !(await authService.verifyPassword(parsed.data.password, user.passwordHash))) {
-    res.status(401).json({ error: 'Invalid administrator credentials' });
-    return;
-  }
-
-  setSession(res, user);
-  await auditService.logAction(user.id, 'auth.admin_login');
   res.json(authService.toPublicUser(user));
 }));
 
@@ -141,10 +122,6 @@ router.post('/google', googleLimiter, asyncHandler(async (req, res) => {
         error: 'Sign in with your password, then connect Google from Settings',
         code: 'ACCOUNT_LINK_REQUIRED',
       });
-      return;
-    }
-    if (result.user!.role !== 'user') {
-      res.status(403).json({ error: 'Use administrator sign-in for this account' });
       return;
     }
     setSession(res, result.user!);

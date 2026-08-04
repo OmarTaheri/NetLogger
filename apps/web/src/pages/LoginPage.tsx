@@ -38,10 +38,6 @@ export default function LoginPage() {
 
   const chooseDemoAccount = (account: DemoAccount) => {
     setError('');
-    if (account.role === 'admin') {
-      navigate('/admin/login', { state: { demoAccount: account } });
-      return;
-    }
     setIdentifier(account.email);
     setPassword(account.password);
   };

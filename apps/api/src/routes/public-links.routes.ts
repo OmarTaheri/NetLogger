@@ -2,10 +2,10 @@ import { isIP } from 'node:net';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import { config } from '../config.js';
 import * as guestLinkService from '../services/guest-link.service.js';
 import { getValidationError } from '../utils/validation.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { getPublicBaseUrl } from '../utils/public-url.js';
 
 const router = Router();
 
@@ -66,9 +66,10 @@ function sanitizeOptions(templateId: 'redirect' | 'captcha', raw?: Record<string
   };
 }
 
-router.get('/config', (_req, res) => {
+router.get('/config', (req, res) => {
+  const baseUrl = getPublicBaseUrl(req);
   res.json({
-    defaultDomain: new URL(config.baseUrl).host,
+    defaultDomain: new URL(baseUrl).host,
     templates: [
       { id: 'redirect', name: 'Signal Redirect', description: 'A clean branded transition before the destination opens.' },
       { id: 'captcha', name: 'Human Check', description: 'A lightweight verification step before continuing.' },
@@ -100,13 +101,13 @@ router.post('/', createLimiter, asyncHandler(async (req, res) => {
     title: parsed.data.title || undefined,
     templateOptions: sanitizeOptions(parsed.data.templateId, parsed.data.templateOptions),
     gpsMode: parsed.data.gpsMode,
-  });
+  }, getPublicBaseUrl(req));
   res.status(201).json(result);
 }));
 
 router.get('/:slug/results', resultsLimiter, asyncHandler(async (req, res) => {
   const token = req.get('x-guest-token') || '';
-  const result = await guestLinkService.getGuestLinkResults(req.params.slug as string, token);
+  const result = await guestLinkService.getGuestLinkResults(req.params.slug as string, token, getPublicBaseUrl(req));
   if (!result) {
     res.status(404).json({ error: 'Guest results not found' });
     return;

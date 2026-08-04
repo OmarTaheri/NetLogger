@@ -1,6 +1,6 @@
-import { eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { db } from '../database/index.js';
-import { links, users, visitors } from '../database/schema.js';
+import { domains, links, users, visitors } from '../database/schema.js';
 
 export async function getAdminOverview() {
   const [totalUsers, standardUsers, totalLinks, activeLinks, totalVisitors] = await Promise.all([
@@ -21,38 +21,49 @@ export async function getAdminOverview() {
 }
 
 export async function getAdminUsers() {
-  const result = await db.execute(sql`
-    SELECT
-      u.id,
-      u.display_name AS "displayName",
-      u.email,
-      u.username,
-      u.role,
-      u.password_hash AS "passwordHash",
-      u.google_subject AS "googleSubject",
-      u.created_at AS "createdAt",
-      (SELECT count(*)::int FROM links l WHERE l.user_id = u.id) AS "linkCount",
-      (SELECT count(*)::int FROM visitors v INNER JOIN links l ON v.link_id = l.id WHERE l.user_id = u.id) AS "visitorCount",
-      (SELECT max(a.created_at) FROM audit_logs a WHERE a.user_id = u.id) AS "lastActivityAt"
-    FROM users u
-    ORDER BY u.created_at DESC
-  `);
-  const rows = result.rows as Array<{
-    id: number;
-    displayName: string;
-    email: string | null;
-    username: string | null;
-    role: 'user' | 'admin';
-    passwordHash: string | null;
-    googleSubject: string | null;
-    createdAt: string;
-    linkCount: number;
-    visitorCount: number;
-    lastActivityAt: string | null;
-  }>;
+  const accountRows = await db.select().from(users).orderBy(desc(users.createdAt));
 
-  return rows.map(({ passwordHash, googleSubject, ...user }) => ({
-    ...user,
-    providers: [passwordHash ? 'password' : null, googleSubject ? 'google' : null].filter(Boolean),
+  return Promise.all(accountRows.map(async (user) => {
+    const [linkCount, visitorCount, lastActivity] = await Promise.all([
+      db.select({ count: sql<number>`count(*)::int` }).from(links).where(eq(links.userId, user.id)),
+      db.select({ count: sql<number>`count(*)::int` }).from(visitors)
+        .innerJoin(links, eq(visitors.linkId, links.id))
+        .where(eq(links.userId, user.id)),
+      db.execute<{ lastActivityAt: string | null }>(sql`SELECT max(created_at) AS "lastActivityAt" FROM audit_logs WHERE user_id = ${user.id}`),
+    ]);
+
+    return {
+      id: user.id,
+      displayName: user.displayName,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      createdAt: user.createdAt,
+      linkCount: linkCount[0]?.count || 0,
+      visitorCount: visitorCount[0]?.count || 0,
+      lastActivityAt: lastActivity.rows[0]?.lastActivityAt || null,
+      providers: [user.passwordHash ? 'password' : null, user.googleSubject ? 'google' : null].filter(Boolean),
+    };
+  }));
+}
+
+export async function getAdminDomains() {
+  const domainRows = await db.select({
+    id: domains.id,
+    domain: domains.domain,
+    isActive: domains.isActive,
+    createdAt: domains.createdAt,
+    ownerId: users.id,
+    ownerDisplayName: users.displayName,
+    ownerEmail: users.email,
+  }).from(domains)
+    .innerJoin(users, eq(domains.userId, users.id))
+    .orderBy(desc(domains.createdAt));
+
+  return Promise.all(domainRows.map(async (domain) => {
+    const linkCount = await db.select({ count: sql<number>`count(*)::int` })
+      .from(links)
+      .where(eq(links.domainId, domain.id));
+    return { ...domain, linkCount: linkCount[0]?.count || 0 };
   }));
 }

@@ -27,8 +27,8 @@ export default {
         tech: ['Rajdhani', 'sans-serif'],
       },
       fontSize: {
-        'hud-xs': ['10px', { letterSpacing: '0.1em' }],
-        'hud-sm': ['12px', { letterSpacing: '0.05em' }],
+        'hud-xs': ['12px', { lineHeight: '1.35', letterSpacing: '0.08em' }],
+        'hud-sm': ['14px', { lineHeight: '1.35', letterSpacing: '0.04em' }],
       },
       keyframes: {
         'hud-blink': {

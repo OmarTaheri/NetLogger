@@ -67,14 +67,14 @@ export async function incrementVisitCount(id: number) {
     ;
 }
 
-export async function getTrackingUrl(link: { userId: number; templateId: string; slug: string; domainId: number | null }) {
+export async function getTrackingUrl(link: { userId: number; templateId: string; slug: string; domainId: number | null }, baseUrl = config.baseUrl) {
   if (link.domainId) {
     const domain = await domainService.getDomainById(link.domainId, link.userId);
     if (domain && domain.isActive) {
       return `https://${domain.domain}/t/${link.templateId}/${link.slug}`;
     }
   }
-  return `${config.baseUrl}/t/${link.templateId}/${link.slug}`;
+  return `${baseUrl.replace(/\/$/, '')}/t/${link.templateId}/${link.slug}`;
 }
 
 export function isLinkExpired(link: { expiresAt: string | null; maxVisits: number | null; visitCount: number }): boolean {

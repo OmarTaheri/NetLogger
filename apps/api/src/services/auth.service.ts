@@ -56,13 +56,6 @@ export async function getUserByEmail(email: string) {
   return (await db.select().from(users).where(eq(users.email, normalizeEmail(email))).limit(1))[0];
 }
 
-export async function getAdminByEmail(email: string) {
-  return (await db.select().from(users).where(and(
-    eq(users.email, normalizeEmail(email)),
-    eq(users.role, 'admin'),
-  )).limit(1))[0];
-}
-
 export async function getUserByGoogleSubject(subject: string) {
   return (await db.select().from(users).where(eq(users.googleSubject, subject)).limit(1))[0];
 }

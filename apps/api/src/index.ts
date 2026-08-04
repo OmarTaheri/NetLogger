@@ -14,6 +14,7 @@ import { eq } from 'drizzle-orm';
 import { wsManager } from './realtime/index.js';
 import * as domainService from './services/domain.service.js';
 import { sanitizeDomain } from './utils/domain.js';
+import { getConfiguredPublicBaseUrl } from './utils/public-url.js';
 import { logger } from './utils/logger.js';
 import { errorHandler } from './middleware/error.js';
 import { cleanupOldVisitors } from './services/cleanup.service.js';
@@ -37,6 +38,7 @@ const webPath = path.join(staticDir, 'web');
 
 export function createApp() {
   const app = express();
+  app.set('trust proxy', 1);
 
   // Security headers (CSP disabled for template CDN scripts)
   app.use(helmet({
@@ -123,9 +125,10 @@ if (process.env.NODE_ENV !== 'test') {
     const seededUser = await ensureDefaultAccounts();
 
     // Seed server domain
-    const baseHost = sanitizeDomain(config.baseUrl);
-    const existingDomain = (await db.select().from(domains).where(eq(domains.domain, baseHost)).limit(1))[0];
-    if (!existingDomain) {
+    const configuredPublicUrl = getConfiguredPublicBaseUrl();
+    const baseHost = configuredPublicUrl && sanitizeDomain(configuredPublicUrl);
+    const existingDomain = baseHost ? (await db.select().from(domains).where(eq(domains.domain, baseHost)).limit(1))[0] : null;
+    if (baseHost && !existingDomain) {
       await domainService.createDomain(seededUser.id, baseHost);
       logger.info(`Domain "${baseHost}" auto-added`);
     }

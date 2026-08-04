@@ -47,7 +47,7 @@ function tokenMatches(slug: string, supplied: string) {
   return expected.length === received.length && timingSafeEqual(expected, received);
 }
 
-export async function createGuestLink(input: CreateGuestLinkInput) {
+export async function createGuestLink(input: CreateGuestLinkInput, baseUrl = config.baseUrl) {
   const owner = await getGuestOwner(true);
   if (!owner) throw new Error('Guest link owner is unavailable');
 
@@ -69,8 +69,8 @@ export async function createGuestLink(input: CreateGuestLinkInput) {
     slug: link.slug,
     title: link.title,
     templateId: link.templateId,
-    trackingUrl: await linkService.getTrackingUrl(link),
-    resultsUrl: `${config.baseUrl}/create/results/${link.slug}#${token}`,
+    trackingUrl: await linkService.getTrackingUrl(link, baseUrl),
+    resultsUrl: `${baseUrl.replace(/\/$/, '')}/create/results/${link.slug}#${token}`,
     resultsToken: token,
     expiresAt: link.expiresAt,
     maxVisits: link.maxVisits,
@@ -78,7 +78,7 @@ export async function createGuestLink(input: CreateGuestLinkInput) {
   };
 }
 
-export async function getGuestLinkResults(slug: string, suppliedToken: string) {
+export async function getGuestLinkResults(slug: string, suppliedToken: string, baseUrl = config.baseUrl) {
   if (!tokenMatches(slug, suppliedToken)) return null;
   const owner = await getGuestOwner(false);
   if (!owner) return null;
@@ -105,7 +105,7 @@ export async function getGuestLinkResults(slug: string, suppliedToken: string) {
       slug: link.slug,
       title: link.title,
       templateId: link.templateId,
-      trackingUrl: await linkService.getTrackingUrl(link),
+      trackingUrl: await linkService.getTrackingUrl(link, baseUrl),
       visitCount: link.visitCount,
       expiresAt: link.expiresAt,
       maxVisits: link.maxVisits,

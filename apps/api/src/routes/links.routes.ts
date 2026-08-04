@@ -5,20 +5,23 @@ import * as domainService from '../services/domain.service.js';
 import * as auditService from '../services/audit.service.js';
 import { createLinkSchema, updateLinkSchema, getValidationError } from '../utils/validation.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { getPublicBaseUrl } from '../utils/public-url.js';
 
 const router = Router();
 router.use(userMiddleware);
 
 router.get('/', asyncHandler(async (req: AuthRequest, res) => {
+  const baseUrl = getPublicBaseUrl(req);
   const links = await linkService.getAllLinks(req.userId!);
   const linksWithUrl = await Promise.all(links.map(async (link) => ({
     ...link,
-    trackingUrl: await linkService.getTrackingUrl(link),
+    trackingUrl: await linkService.getTrackingUrl(link, baseUrl),
   })));
   res.json(linksWithUrl);
 }));
 
 router.post('/', asyncHandler(async (req: AuthRequest, res) => {
+  const baseUrl = getPublicBaseUrl(req);
   const parsed = createLinkSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: getValidationError(parsed) });
@@ -35,11 +38,12 @@ router.post('/', asyncHandler(async (req: AuthRequest, res) => {
   await auditService.logAction(req.userId!, 'link.create', 'link', link.id, { slug: link.slug });
   res.json({
     ...link,
-    trackingUrl: await linkService.getTrackingUrl(link),
+    trackingUrl: await linkService.getTrackingUrl(link, baseUrl),
   });
 }));
 
 router.get('/:id', asyncHandler(async (req: AuthRequest, res) => {
+  const baseUrl = getPublicBaseUrl(req);
   const link = await linkService.getLinkById(req.userId!, parseInt(req.params.id as string));
   if (!link) {
     res.status(404).json({ error: 'Link not found' });
@@ -47,11 +51,12 @@ router.get('/:id', asyncHandler(async (req: AuthRequest, res) => {
   }
   res.json({
     ...link,
-    trackingUrl: await linkService.getTrackingUrl(link),
+    trackingUrl: await linkService.getTrackingUrl(link, baseUrl),
   });
 }));
 
 router.patch('/:id', asyncHandler(async (req: AuthRequest, res) => {
+  const baseUrl = getPublicBaseUrl(req);
   const parsed = updateLinkSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: getValidationError(parsed) });
@@ -80,7 +85,7 @@ router.patch('/:id', asyncHandler(async (req: AuthRequest, res) => {
   await auditService.logAction(req.userId!, 'link.update', 'link', link.id);
   res.json({
     ...link,
-    trackingUrl: await linkService.getTrackingUrl(link),
+    trackingUrl: await linkService.getTrackingUrl(link, baseUrl),
   });
 }));
 

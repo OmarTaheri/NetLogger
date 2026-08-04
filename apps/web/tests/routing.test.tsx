@@ -9,7 +9,6 @@ vi.mock('../src/api/auth', () => ({
   getMe: vi.fn(),
   getAuthConfig: vi.fn(),
   login: vi.fn(),
-  adminLogin: vi.fn(),
   register: vi.fn(),
   googleSignIn: vi.fn(),
   linkGoogle: vi.fn(),
@@ -83,6 +82,21 @@ describe('application route guards', () => {
     expect(screen.getByLabelText('Password')).toHaveValue('User12345678!');
   });
 
+  it('uses the same login form when an administrator demo account is selected', async () => {
+    mockedAuth.getAuthConfig.mockResolvedValue({
+      googleEnabled: false,
+      googleClientId: null,
+      demoAccounts: [{ label: 'Administrator', email: 'admin@netlogger.local', password: 'Admin123456!', role: 'admin' }],
+    });
+
+    renderAt('/login');
+    await screen.findByRole('heading', { name: 'Welcome back' });
+    fireEvent.click(screen.getByRole('button', { name: /Administrator/i }));
+    expect(screen.getByLabelText('Email or username')).toHaveValue('admin@netlogger.local');
+    expect(screen.getByLabelText('Password')).toHaveValue('Admin123456!');
+    expect(screen.getByTestId('location')).toHaveTextContent('/login');
+  });
+
   it('redirects protected application routes to login', async () => {
     renderAt('/app/visitors');
     expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
@@ -133,5 +147,22 @@ describe('application route guards', () => {
     expect(await screen.findByRole('heading', { name: 'Admin overview' })).toBeInTheDocument();
     expect(screen.getByTestId('location')).toHaveTextContent('/admin');
     expect(screen.queryByRole('link', { name: 'User app' })).not.toBeInTheDocument();
+  });
+
+  it('logs an administrator out through the unified login route', async () => {
+    mockedAuth.getMe.mockResolvedValue({
+      id: 1,
+      email: 'admin@netlogger.local',
+      displayName: 'Administrator',
+      role: 'admin',
+      providers: ['password'],
+    });
+    mockedAuth.logout.mockResolvedValue({ ok: true });
+
+    renderAt('/admin');
+    await screen.findByRole('heading', { name: 'Admin overview' });
+    fireEvent.click(screen.getByRole('button', { name: 'Logout' }));
+    expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('/login');
   });
 });

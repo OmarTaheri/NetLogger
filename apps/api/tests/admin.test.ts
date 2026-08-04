@@ -28,15 +28,16 @@ beforeAll(async () => {
 });
 
 describe('Admin portal', () => {
-  it('requires an administrator email and password', async () => {
-    const denied = await request(app).post('/api/auth/admin/login').send({
-      email: 'standard-user@example.com',
+  it('uses the unified login route for administrators and standard users', async () => {
+    const standardUser = await request(app).post('/api/auth/login').send({
+      identifier: 'standard-user@example.com',
       password: 'standard-test-pass!',
     });
-    expect(denied.status).toBe(401);
+    expect(standardUser.status).toBe(200);
+    expect(standardUser.body.role).toBe('user');
 
-    const login = await request(app).post('/api/auth/admin/login').send({
-      email: 'portal-admin@example.com',
+    const login = await request(app).post('/api/auth/login').send({
+      identifier: 'portal-admin@example.com',
       password: 'admin-test-pass!',
     });
     expect(login.status).toBe(200);
@@ -45,8 +46,8 @@ describe('Admin portal', () => {
   });
 
   it('protects overview and the read-only user list behind the admin role', async () => {
-    const login = await request(app).post('/api/auth/admin/login').send({
-      email: 'portal-admin@example.com',
+    const login = await request(app).post('/api/auth/login').send({
+      identifier: 'portal-admin@example.com',
       password: 'admin-test-pass!',
     });
     const cookie = login.headers['set-cookie'];
@@ -61,6 +62,15 @@ describe('Admin portal', () => {
       expect.objectContaining({ email: 'portal-admin@example.com', role: 'admin', linkCount: 0, visitorCount: 0 }),
       expect.objectContaining({ email: 'standard-user@example.com', role: 'user', linkCount: 0, visitorCount: 0 }),
     ]));
+
+    const listedDomains = await request(app)
+      .get('/api/admin/domains')
+      .set('Cookie', cookie)
+      .set('x-forwarded-proto', 'https')
+      .set('x-forwarded-host', 'netlogger.example.com');
+    expect(listedDomains.status).toBe(200);
+    expect(listedDomains.body.defaultDomain).toBe('netlogger.example.com');
+    expect(Array.isArray(listedDomains.body.domains)).toBe(true);
 
     const blockedUserApi = await request(app).get('/api/links').set('Cookie', cookie);
     expect(blockedUserApi.status).toBe(403);

@@ -2,12 +2,13 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 
 interface AdminLayoutProps {
   displayName: string;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
 }
 
 const navigation = [
   { to: '/admin', end: true, label: 'Overview' },
   { to: '/admin/users', label: 'Users' },
+  { to: '/admin/domains', label: 'Domains' },
 ];
 
 export default function AdminLayout({ displayName, onLogout }: AdminLayoutProps) {
@@ -20,7 +21,7 @@ export default function AdminLayout({ displayName, onLogout }: AdminLayoutProps)
           </Link>
           <div className="flex items-center gap-3 text-hud-xs font-mono uppercase">
             <span className="hidden text-hud-text-muted sm:block">{displayName}</span>
-            <button onClick={onLogout} className="text-hud-red hover:text-hud-red/80">Logout</button>
+            <button type="button" onClick={() => { void onLogout(); }} className="text-hud-red hover:text-hud-red/80">Logout</button>
           </div>
         </div>
       </header>

@@ -29,11 +29,6 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-export const adminLoginSchema = z.object({
-  email: z.string().trim().email('Enter the administrator email address').max(254),
-  password: z.string().min(1, 'Password is required'),
-});
-
 const passwordSchema = z.string()
   .min(12, 'Password must be at least 12 characters')
   .refine((value) => Buffer.byteLength(value, 'utf8') <= 72, 'Password must be at most 72 bytes');

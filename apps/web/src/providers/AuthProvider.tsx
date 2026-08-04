@@ -6,7 +6,6 @@ interface AuthContextValue {
   config: authApi.AuthConfig;
   loading: boolean;
   login: (identifier: string, password: string) => Promise<authApi.User>;
-  adminLogin: (email: string, password: string) => Promise<authApi.User>;
   register: (displayName: string, email: string, password: string) => Promise<authApi.User>;
   googleSignIn: (credential: string) => Promise<authApi.User>;
   linkGoogle: (credential: string) => Promise<authApi.User>;
@@ -35,12 +34,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return nextUser;
   }, []);
 
-  const adminLogin = useCallback(async (email: string, password: string) => {
-    const nextUser = await authApi.adminLogin(email, password);
-    setUser(nextUser);
-    return nextUser;
-  }, []);
-
   const register = useCallback(async (displayName: string, email: string, password: string) => {
     const nextUser = await authApi.register(displayName, email, password);
     setUser(nextUser);
@@ -60,12 +53,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await authApi.logout();
-    setUser(null);
+    try {
+      await authApi.logout();
+    } finally {
+      // Leave the protected interface even if a transient network failure prevents
+      // the server from clearing the cookie. The next request will re-check it.
+      setUser(null);
+    }
   }, []);
 
-  const value = useMemo(() => ({ user, config, loading, login, adminLogin, register, googleSignIn, linkGoogle, logout }),
-    [user, config, loading, login, adminLogin, register, googleSignIn, linkGoogle, logout]);
+  const value = useMemo(() => ({ user, config, loading, login, register, googleSignIn, linkGoogle, logout }),
+    [user, config, loading, login, register, googleSignIn, linkGoogle, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

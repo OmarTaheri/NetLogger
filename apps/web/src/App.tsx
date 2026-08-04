@@ -14,9 +14,9 @@ import WebhooksPage from './pages/WebhooksPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PublicCreateLinkPage from './pages/PublicCreateLinkPage';
 import GuestResultsPage from './pages/GuestResultsPage';
-import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminDomainsPage from './pages/AdminDomainsPage';
 import AdminLayout from './components/AdminLayout';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -52,7 +52,7 @@ function AdminOnly({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
   if (loading) return <LoadingScreen />;
-  if (!user) return <Navigate to="/admin/login" replace state={{ from: location.pathname + location.search }} />;
+  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   if (user.role !== 'admin') return <Navigate to="/app" replace />;
   return children;
 }
@@ -69,7 +69,6 @@ export default function App() {
       <Route path="/" element={<Suspense fallback={<LoadingScreen />}><LandingPage /></Suspense>} />
       <Route path="/login" element={<PublicOnly><LoginPage /></PublicOnly>} />
       <Route path="/signup" element={<PublicOnly><SignupPage /></PublicOnly>} />
-      <Route path="/admin/login" element={<PublicOnly><AdminLoginPage /></PublicOnly>} />
       <Route path="/create" element={<Layout displayName={user?.displayName || 'Guest operator'} onLogout={user ? logout : undefined} guestMode={!user}><PublicCreateLinkPage /></Layout>} />
       <Route path="/create/results/:slug" element={<GuestResultsPage />} />
 
@@ -86,6 +85,7 @@ export default function App() {
       <Route path="/admin" element={<AdminOnly><AdminLayout displayName={user?.displayName || 'Administrator'} onLogout={logout} /></AdminOnly>}>
         <Route index element={<AdminDashboardPage />} />
         <Route path="users" element={<AdminUsersPage />} />
+        <Route path="domains" element={<AdminDomainsPage />} />
       </Route>
 
       <Route path="/dashboard" element={<Navigate to="/app" replace />} />

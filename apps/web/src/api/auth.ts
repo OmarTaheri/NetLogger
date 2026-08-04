@@ -31,10 +31,6 @@ export function login(identifier: string, password: string) {
   return api.post<User>('/api/auth/login', { identifier, password });
 }
 
-export function adminLogin(email: string, password: string) {
-  return api.post<User>('/api/auth/admin/login', { email, password });
-}
-
 export function register(displayName: string, email: string, password: string) {
   return api.post<User>('/api/auth/register', { displayName, email, password });
 }

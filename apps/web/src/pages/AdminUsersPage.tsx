@@ -23,13 +23,17 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const loadUsers = useCallback(async () => {
+    setLoading(true);
     try {
       setError('');
       setUsers(await getAdminUsers());
     } catch (err: any) {
       setError(err.message || 'Could not load users');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -95,8 +99,8 @@ export default function AdminUsersPage() {
       <HudPageTitle subtitle="Account activity and usage // Read-only" animate>Users</HudPageTitle>
       <HudPanel corners className="p-4 md:p-6">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="font-mono text-hud-xs uppercase tracking-widest text-hud-text-muted">{filteredUsers.length} account{filteredUsers.length === 1 ? '' : 's'}</p>
-          <HudInput aria-label="Search users" value={search} onChange={(event) => { setSearch(event.target.value); table.setPageIndex(0); }} placeholder="Search name, email, or role" className="sm:max-w-xs" />
+          <p className="font-mono text-hud-xs uppercase tracking-widest text-hud-text-muted">{loading ? 'Loading accounts…' : `${filteredUsers.length} account${filteredUsers.length === 1 ? '' : 's'}`}</p>
+          <div className="flex gap-2"><HudInput aria-label="Search users" value={search} onChange={(event) => { setSearch(event.target.value); table.setPageIndex(0); }} placeholder="Search name, email, or role" className="sm:max-w-xs" /><HudButton type="button" variant="secondary" onClick={() => { void loadUsers(); }} disabled={loading}>Refresh</HudButton></div>
         </div>
         {error ? <p className="font-mono text-hud-sm text-hud-red">{error}</p> : (
           <>
@@ -129,7 +133,7 @@ export default function AdminUsersPage() {
                       {row.getVisibleCells().map((cell) => <td key={cell.id} className="px-3 py-3">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}
                     </tr>
                   ))}
-                  {!table.getRowModel().rows.length && <tr><td colSpan={columns.length} className="px-3 py-10 text-center font-mono text-hud-sm text-hud-text-muted">No accounts match your search.</td></tr>}
+                  {!loading && !table.getRowModel().rows.length && <tr><td colSpan={columns.length} className="px-3 py-10 text-center font-mono text-hud-sm text-hud-text-muted">No accounts match your search.</td></tr>}
                 </tbody>
               </table>
             </div>

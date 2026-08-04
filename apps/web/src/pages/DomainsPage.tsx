@@ -52,20 +52,21 @@ export default function DomainsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <HudPageTitle subtitle="Add custom domains that point to this server" animate animationDelay={0}>Domains</HudPageTitle>
+        <HudPageTitle subtitle="Connect domains to your account and select them for any new link" animate animationDelay={0}>Domains</HudPageTitle>
       </div>
 
       {/* Add domain form */}
       <HudPanel corners animate animationDelay={1} className="p-5">
         <form onSubmit={handleAdd}>
-          <label className="block text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted mb-2">Add Domain</label>
+          <label className="block text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted mb-2">Connect a domain</label>
           <div className="flex gap-3">
             <div className="flex-1">
               <HudInput
                 type="text"
                 value={newDomain}
                 onChange={(e) => setNewDomain(e.target.value)}
-                placeholder="e.g. drive.yourdomain.com"
+                placeholder="e.g. links.yourdomain.com"
+                aria-describedby="domain-help"
               />
             </div>
             <HudButton type="submit" disabled={loading} variant="primary">
@@ -74,7 +75,7 @@ export default function DomainsPage() {
           </div>
           {error && <p className="text-hud-red text-sm font-mono mt-2">{error}</p>}
           <p className="text-hud-xs text-hud-text-muted mt-2 font-mono">
-            Make sure the domain's DNS points to this server before using it.
+            <span id="domain-help">Enter a domain or subdomain you control. Point its DNS to this server, then select it when creating a link. It will be attached only to your account.</span>
           </p>
         </form>
       </HudPanel>
@@ -88,7 +89,7 @@ export default function DomainsPage() {
               <div>
                 <p className="font-mono text-hud-text">{d.domain}</p>
                 <p className="text-hud-xs text-hud-text-muted font-mono">
-                  Added {new Date(d.createdAt + 'Z').toLocaleDateString()}
+                  Connected to your account {new Date(d.createdAt + 'Z').toLocaleDateString()}
                 </p>
               </div>
             </div>
