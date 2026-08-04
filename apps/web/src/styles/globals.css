@@ -443,8 +443,8 @@ body {
 .manifesto-grid strong { border-top:1px solid #222; padding-top:10px; }
 .signal-marquee { position:absolute; bottom:0; left:0; width:100%; overflow:hidden; border-top:1px solid #222; font:700 20px/1 Rajdhani,sans-serif; }
 .signal-marquee__track { display:flex; width:max-content; padding:20px 0; animation:marquee 28s linear infinite; will-change:transform; }
-.signal-marquee span { white-space:nowrap; padding-right:16px; }
-@keyframes marquee { to{transform:translateX(-50%)} }
+.signal-marquee span { flex:0 0 auto; white-space:nowrap; }
+@keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-8.333333%)} }
 
 .workflow-section { position:relative; overflow:hidden; padding:100px 3vw 10vh; background:#080808; }
 .workflow-section::before { content:""; position:absolute; z-index:0; inset:0; pointer-events:none; opacity:.25; background-image:repeating-linear-gradient(0deg,transparent 0 3px,rgba(32,215,255,.065) 3px 4px),radial-gradient(circle at 12% 22%,rgba(241,90,36,.24) 0 .65px,transparent .9px),radial-gradient(circle at 82% 64%,rgba(32,215,255,.17) 0 .6px,transparent .9px); background-size:auto,11px 13px,17px 19px; mask-image:linear-gradient(to bottom,transparent,#000 9%,#000 91%,transparent); animation:scan-static-drift 5s steps(12) infinite; }
