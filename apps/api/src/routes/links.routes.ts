@@ -10,6 +10,18 @@ import { getPublicBaseUrl } from '../utils/public-url.js';
 const router = Router();
 router.use(userMiddleware);
 
+async function ensureUsableDomain(domainId: number, userId: number): Promise<{ domain: NonNullable<Awaited<ReturnType<typeof domainService.getDomainById>>> } | { error: string; status: number }> {
+  const domain = await domainService.getDomainById(domainId, userId);
+  if (!domain) return { error: 'Domain not found', status: 404 };
+  if (!domain.isActive || domain.verificationStatus !== 'verified') return { error: 'Verify and activate this domain before using it for a link.', status: 400 };
+  return { domain };
+}
+
+async function isSlugAvailable(slug: string, linkId?: number) {
+  const existing = await linkService.getLinkBySlug(slug);
+  return !existing || existing.id === linkId;
+}
+
 router.get('/', asyncHandler(async (req: AuthRequest, res) => {
   const baseUrl = getPublicBaseUrl(req);
   const links = await linkService.getAllLinks(req.userId!);
@@ -28,13 +40,20 @@ router.post('/', asyncHandler(async (req: AuthRequest, res) => {
     return;
   }
 
-  const { targetUrl, templateId, title, templateOptions, gpsMode, domainId, expiresAt, maxVisits } = parsed.data;
+  const { targetUrl, templateId, title, templateOptions, gpsMode, domainId, expiresAt, maxVisits, slug } = parsed.data;
 
-  if (domainId && !(await domainService.getDomainById(domainId, req.userId!))) {
-    res.status(404).json({ error: 'Domain not found' });
+  if (domainId) {
+    const domainResult = await ensureUsableDomain(domainId, req.userId!);
+    if ('error' in domainResult) {
+      res.status(domainResult.status).json({ error: domainResult.error });
+      return;
+    }
+  }
+  if (slug && !(await isSlugAvailable(slug))) {
+    res.status(409).json({ error: 'That custom URL is already in use.' });
     return;
   }
-  const link = await linkService.createLink(req.userId!, targetUrl, templateId, title, templateOptions, gpsMode, domainId ?? undefined, expiresAt, maxVisits);
+  const link = await linkService.createLink(req.userId!, targetUrl, templateId, title, templateOptions, gpsMode, domainId ?? undefined, expiresAt, maxVisits, slug);
   await auditService.logAction(req.userId!, 'link.create', 'link', link.id, { slug: link.slug });
   res.json({
     ...link,
@@ -64,7 +83,7 @@ router.patch('/:id', asyncHandler(async (req: AuthRequest, res) => {
   }
 
   const updateData: Record<string, any> = {};
-  const { title, isActive, templateOptions, gpsMode, domainId, expiresAt, maxVisits } = parsed.data;
+  const { title, isActive, templateOptions, gpsMode, domainId, expiresAt, maxVisits, slug } = parsed.data;
   if (title !== undefined) updateData.title = title;
   if (isActive !== undefined) updateData.isActive = isActive;
   if (templateOptions !== undefined) updateData.templateOptions = JSON.stringify(templateOptions);
@@ -72,9 +91,17 @@ router.patch('/:id', asyncHandler(async (req: AuthRequest, res) => {
   if (domainId !== undefined) updateData.domainId = domainId;
   if (expiresAt !== undefined) updateData.expiresAt = expiresAt;
   if (maxVisits !== undefined) updateData.maxVisits = maxVisits;
+  if (slug !== undefined) updateData.slug = slug;
 
-  if (domainId && !(await domainService.getDomainById(domainId, req.userId!))) {
-    res.status(404).json({ error: 'Domain not found' });
+  if (domainId) {
+    const domainResult = await ensureUsableDomain(domainId, req.userId!);
+    if ('error' in domainResult) {
+      res.status(domainResult.status).json({ error: domainResult.error });
+      return;
+    }
+  }
+  if (slug && !(await isSlugAvailable(slug, parseInt(req.params.id as string)))) {
+    res.status(409).json({ error: 'That custom URL is already in use.' });
     return;
   }
   const link = await linkService.updateLink(req.userId!, parseInt(req.params.id as string), updateData);

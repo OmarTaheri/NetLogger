@@ -15,7 +15,7 @@ export function createLink(input: CreateLinkInput) {
   return api.post<LinkWithUrl>('/api/links', input);
 }
 
-export function updateLink(id: number, data: { title?: string; isActive?: boolean; templateOptions?: object; gpsMode?: string; domainId?: number | null }) {
+export function updateLink(id: number, data: { title?: string; isActive?: boolean; templateOptions?: object; gpsMode?: string; domainId?: number | null; slug?: string }) {
   return api.patch<LinkWithUrl>(`/api/links/${id}`, data);
 }
 

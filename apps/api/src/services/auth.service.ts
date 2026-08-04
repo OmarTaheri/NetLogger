@@ -16,6 +16,7 @@ export type PublicUser = {
   displayName: string;
   avatarUrl: string | null;
   role: 'user' | 'admin';
+  onboardingCompleted: boolean;
   providers: Array<'password' | 'google'>;
 };
 
@@ -36,6 +37,7 @@ export function toPublicUser(user: UserRow): PublicUser {
     displayName: user.displayName,
     avatarUrl: user.avatarUrl,
     role: user.role,
+    onboardingCompleted: user.onboardingCompleted,
     providers,
   };
 }
@@ -60,17 +62,6 @@ export async function getUserByGoogleSubject(subject: string) {
   return (await db.select().from(users).where(eq(users.googleSubject, subject)).limit(1))[0];
 }
 
-export async function registerUser(displayName: string, email: string, password: string) {
-  const normalized = normalizeEmail(email);
-  if (await getUserByEmail(normalized)) return null;
-  const passwordHash = await bcrypt.hash(password, 12);
-  return (await db.insert(users).values({
-    displayName: displayName.trim(),
-    email: normalized,
-    passwordHash,
-  }).returning())[0];
-}
-
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
@@ -82,6 +73,15 @@ export async function updatePassword(id: number, newPassword: string) {
     tokenVersion: sql`${users.tokenVersion} + 1`,
     updatedAt: sql`(CURRENT_TIMESTAMP)::text`,
   }).where(eq(users.id, id)).returning())[0];
+}
+
+export async function completeOnboarding(userId: number, displayName: string, username?: string) {
+  return (await db.update(users).set({
+    displayName: displayName.trim(),
+    username: username || undefined,
+    onboardingCompleted: true,
+    updatedAt: sql`(CURRENT_TIMESTAMP)::text`,
+  }).where(eq(users.id, userId)).returning())[0];
 }
 
 export function createToken(user: Pick<UserRow, 'id' | 'tokenVersion'>): string {
@@ -124,6 +124,7 @@ export async function signInWithGoogle(payload: TokenPayload): Promise<{ user?: 
     displayName: payload.name?.trim() || email.split('@')[0],
     googleSubject: payload.sub,
     avatarUrl: payload.picture || null,
+    onboardingCompleted: false,
   }).returning())[0];
   return { user };
 }

@@ -18,7 +18,7 @@ import { getConfiguredPublicBaseUrl } from './utils/public-url.js';
 import { logger } from './utils/logger.js';
 import { errorHandler } from './middleware/error.js';
 import { cleanupOldVisitors } from './services/cleanup.service.js';
-import { ensureDefaultAccounts } from './services/seed.service.js';
+import { ensureDefaultAccounts, refreshDemoData } from './services/seed.service.js';
 
 import authRoutes from './routes/auth.routes.js';
 import linksRoutes from './routes/links.routes.js';
@@ -31,6 +31,7 @@ import exportRoutes from './routes/export.routes.js';
 import webhooksRoutes from './routes/webhooks.routes.js';
 import publicLinksRoutes from './routes/public-links.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import templatePreviewRoutes from './routes/template-preview.routes.js';
 
 const apiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const staticDir = path.join(apiRoot, 'static');
@@ -84,6 +85,7 @@ export function createApp() {
   app.use('/api/export', exportRoutes);
   app.use('/api/webhooks', webhooksRoutes);
   app.use('/api/public/links', publicLinksRoutes);
+  app.use('/api/templates/preview', templatePreviewRoutes);
   app.use('/api/admin', adminRoutes);
 
   // Health check for container orchestration (Coolify, etc.)
@@ -122,14 +124,17 @@ if (process.env.NODE_ENV !== 'test') {
     // Init database tables
     await initDb();
 
-    const seededUser = await ensureDefaultAccounts();
+    const { admin, demoUser } = await ensureDefaultAccounts();
+    if (config.seedDemoData && demoUser) {
+      await refreshDemoData(demoUser.id);
+    }
 
     // Seed server domain
     const configuredPublicUrl = getConfiguredPublicBaseUrl();
     const baseHost = configuredPublicUrl && sanitizeDomain(configuredPublicUrl);
     const existingDomain = baseHost ? (await db.select().from(domains).where(eq(domains.domain, baseHost)).limit(1))[0] : null;
     if (baseHost && !existingDomain) {
-      await domainService.createDomain(seededUser.id, baseHost);
+      await domainService.createDomain(admin.id, baseHost);
       logger.info(`Domain "${baseHost}" auto-added`);
     }
 

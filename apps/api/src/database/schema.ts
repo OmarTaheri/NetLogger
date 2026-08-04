@@ -12,6 +12,7 @@ export const users = pgTable('users', {
   googleSubject: text('google_subject').unique(),
   avatarUrl: text('avatar_url'),
   role: text('role', { enum: ['user', 'admin'] }).default('user').notNull(),
+  onboardingCompleted: boolean('onboarding_completed').default(true).notNull(),
   tokenVersion: integer('token_version').default(0).notNull(),
   createdAt: text('created_at').default(timestampText).notNull(),
   updatedAt: text('updated_at').default(timestampText).notNull(),
@@ -25,6 +26,10 @@ export const domains = pgTable('domains', {
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   domain: text('domain').notNull().unique(),
   isActive: boolean('is_active').default(true).notNull(),
+  verificationStatus: text('verification_status', { enum: ['pending', 'verified', 'failed'] }).default('pending').notNull(),
+  verificationToken: text('verification_token').notNull(),
+  verificationError: text('verification_error'),
+  verifiedAt: text('verified_at'),
   createdAt: text('created_at').default(timestampText).notNull(),
 }, (table) => [index('domains_user_id_idx').on(table.userId)]);
 

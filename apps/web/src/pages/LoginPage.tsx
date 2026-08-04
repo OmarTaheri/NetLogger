@@ -16,8 +16,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const requestedDestination = (location.state as { from?: string } | null)?.from;
 
-  const complete = useCallback((user: { role: 'user' | 'admin' }) => {
-    navigate(requestedDestination || (user.role === 'admin' ? '/admin' : '/app'), { replace: true });
+  const complete = useCallback((user: { role: 'user' | 'admin'; onboardingCompleted: boolean }) => {
+    navigate(user.onboardingCompleted ? (requestedDestination || (user.role === 'admin' ? '/admin' : '/app')) : '/onboarding', { replace: true });
   }, [requestedDestination, navigate]);
   const handleGoogle = useCallback(async (credential: string) => {
     setError('');

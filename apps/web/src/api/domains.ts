@@ -13,6 +13,10 @@ export function updateDomain(id: number, data: { domain?: string; isActive?: boo
   return api.patch<Domain>(`/api/domains/${id}`, data);
 }
 
+export function verifyDomain(id: number) {
+  return api.post<Domain>(`/api/domains/${id}/verify`, {});
+}
+
 export function deleteDomain(id: number) {
   return api.delete<{ ok: boolean }>(`/api/domains/${id}`);
 }

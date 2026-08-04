@@ -6,9 +6,9 @@ import { authMiddleware, userMiddleware, AuthRequest } from '../middleware/auth.
 import { asyncHandler } from '../utils/asyncHandler.js';
 import {
   loginSchema,
-  registerSchema,
   googleCredentialSchema,
   changePasswordSchema,
+  onboardingSchema,
   getValidationError,
 } from '../utils/validation.js';
 import { config } from '../config.js';
@@ -17,7 +17,6 @@ const router = Router();
 const fifteenMinutes = 15 * 60 * 1000;
 
 const loginLimiter = rateLimit({ windowMs: fifteenMinutes, max: 10, standardHeaders: true, legacyHeaders: false });
-const registerLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false });
 const googleLimiter = rateLimit({ windowMs: fifteenMinutes, max: 20, standardHeaders: true, legacyHeaders: false });
 
 const cookieOptions = {
@@ -54,31 +53,6 @@ router.get('/config', (_req, res) => {
     ] : [],
   });
 });
-
-router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
-  const parsed = registerSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: getValidationError(parsed) });
-    return;
-  }
-
-  try {
-    const user = await authService.registerUser(parsed.data.displayName, parsed.data.email, parsed.data.password);
-    if (!user) {
-      res.status(409).json({ error: 'An account with that email already exists', code: 'EMAIL_EXISTS' });
-      return;
-    }
-    setSession(res, user);
-    await auditService.logAction(user.id, 'auth.register');
-    res.status(201).json(authService.toPublicUser(user));
-  } catch (error: any) {
-    if (error?.message?.includes('UNIQUE constraint')) {
-      res.status(409).json({ error: 'An account with that email already exists', code: 'EMAIL_EXISTS' });
-      return;
-    }
-    throw error;
-  }
-}));
 
 router.post('/login', loginLimiter, asyncHandler(async (req, res) => {
   const candidate = { ...req.body, identifier: req.body?.identifier ?? req.body?.username };
@@ -160,6 +134,25 @@ router.post('/logout', (_req, res) => {
 router.get('/me', authMiddleware, (req: AuthRequest, res) => {
   res.json(req.user);
 });
+
+router.patch('/onboarding', authMiddleware, asyncHandler(async (req: AuthRequest, res) => {
+  const parsed = onboardingSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: getValidationError(parsed) });
+    return;
+  }
+  try {
+    const user = await authService.completeOnboarding(req.userId!, parsed.data.displayName, parsed.data.username);
+    await auditService.logAction(user.id, 'auth.onboarding_complete');
+    res.json(authService.toPublicUser(user));
+  } catch (error: any) {
+    if (error?.code === '23505' || error?.message?.includes('UNIQUE constraint')) {
+      res.status(409).json({ error: 'That username is already taken.', code: 'USERNAME_EXISTS' });
+      return;
+    }
+    throw error;
+  }
+}));
 
 router.patch('/password', userMiddleware, asyncHandler(async (req: AuthRequest, res) => {
   const parsed = changePasswordSchema.safeParse(req.body);

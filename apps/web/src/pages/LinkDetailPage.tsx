@@ -9,7 +9,7 @@ import OSPieChart from '../components/charts/OSPieChart';
 import { HudSectionTitle, HudBadge, HudButton } from '../components/ui/HudComponents';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useToast } from '../hooks/useToast';
-import { getLink } from '../api/links';
+import { getLink, updateLink } from '../api/links';
 import { getVisitors, getStats, deleteVisitor } from '../api/visitors';
 import type { Link, Stats, Visitor } from '@netlogger/shared/types';
 import { copyToClipboard } from '../utils/clipboard';
@@ -25,6 +25,8 @@ export default function LinkDetailPage() {
   const [link, setLink] = useState<LinkWithUrl | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [visitors, setVisitors] = useState<Visitor[]>([]);
+  const [slug, setSlug] = useState('');
+  const [slugError, setSlugError] = useState('');
 
   const loadData = useCallback(async () => {
     try {
@@ -34,6 +36,7 @@ export default function LinkDetailPage() {
         getVisitors({ linkId, limit: 100 }),
       ]);
       setLink(l);
+      setSlug(l.slug);
       setStats(s);
       setVisitors(v.visitors);
     } catch {
@@ -67,6 +70,19 @@ export default function LinkDetailPage() {
     window.open(`/api/export/visitors/export?linkId=${linkId}`, '_blank');
   };
 
+  const handleSlugUpdate = async () => {
+    if (!link || slug === link.slug) return;
+    setSlugError('');
+    try {
+      const updated = await updateLink(link.id, { slug });
+      setLink(updated);
+      setSlug(updated.slug);
+      addToast('Custom link path updated', 'success');
+    } catch (caught) {
+      setSlugError(caught instanceof Error ? caught.message : 'Could not update the custom link path.');
+    }
+  };
+
   if (!link) return <div className="text-center py-12 text-hud-text-muted font-mono">Loading...</div>;
 
   const templateLabel: Record<string, string> = {
@@ -90,6 +106,11 @@ export default function LinkDetailPage() {
           </HudBadge>
         </div>
         <p className="text-sm text-hud-text-muted mt-1 font-mono">Target: {link.targetUrl}</p>
+        <div className="mt-3 flex max-w-xl flex-col gap-2 sm:flex-row sm:items-end">
+          <label className="flex-1 font-mono text-hud-xs uppercase text-hud-text-muted">Custom link path<input value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase())} pattern="[a-z0-9]+(-[a-z0-9]+)*" minLength={3} maxLength={80} className="mt-1 w-full border border-hud-border bg-hud-bg px-3 py-2 text-sm text-hud-text outline-none focus:border-hud-accent/50" /></label>
+          <HudButton type="button" variant="secondary" onClick={() => { void handleSlugUpdate(); }} disabled={slug === link.slug}>Save path</HudButton>
+        </div>
+        {slugError && <p className="mt-2 font-mono text-hud-sm text-hud-red">{slugError}</p>}
         <div className="flex items-center gap-2 mt-2">
           <code className="text-sm bg-hud-bg px-3 py-1.5 font-mono text-hud-accent border border-hud-border">
             {link.trackingUrl}

@@ -19,6 +19,7 @@ export default function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormPr
   const [targetUrl, setTargetUrl] = useState('');
   const [templateId, setTemplateId] = useState<TemplateId>('redirect');
   const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
   const [gpsMode, setGpsMode] = useState<'required' | 'optional' | 'disabled'>('optional');
   const [domainId, setDomainId] = useState<number | undefined>(undefined);
   const [domains, setDomains] = useState<Domain[]>([]);
@@ -120,6 +121,7 @@ export default function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormPr
         targetUrl,
         templateId,
         title: title || undefined,
+        slug: slug.trim() || undefined,
         templateOptions,
         gpsMode,
         domainId,
@@ -155,6 +157,19 @@ export default function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormPr
             onChange={(e) => setTitle(e.target.value)}
             placeholder="My link"
           />
+        </div>
+        <div>
+          <label className="block text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted mb-1">Custom link path (optional)</label>
+          <HudInput
+            type="text"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value.toLowerCase())}
+            placeholder="e.g. summer-campaign"
+            pattern="[a-z0-9]+(-[a-z0-9]+)*"
+            minLength={3}
+            maxLength={80}
+          />
+          <p className="mt-1 text-hud-xs text-hud-text-muted">Use lowercase letters, numbers, and hyphens. Every custom path is reserved globally, so another account cannot use it.</p>
         </div>
         <div>
           <label className="block text-hud-xs uppercase tracking-widest font-mono text-hud-text-muted mb-2">Template</label>

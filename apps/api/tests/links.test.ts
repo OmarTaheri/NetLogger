@@ -158,16 +158,16 @@ describe('Link Routes', () => {
   });
 
   it('keeps link reads, updates, deletes, statistics, and domain assignment private', async () => {
-    const secondRegistration = await request(app).post('/api/auth/register').send({
-      displayName: 'Second Operator',
-      email: 'second@example.com',
-      password: 'another-secure-password',
-    });
-    const secondCookie = secondRegistration.headers['set-cookie'];
+    const secondPassword = 'another-secure-password';
+    const secondHash = await bcrypt.hash(secondPassword, 10);
+    await db.insert(users).values({ displayName: 'Second Operator', email: 'second@example.com', passwordHash: secondHash });
+    const secondLogin = await request(app).post('/api/auth/login').send({ identifier: 'second@example.com', password: secondPassword });
+    const secondCookie = secondLogin.headers['set-cookie'];
 
     const firstLink = await request(app).post('/api/links').set('Cookie', cookie).send({
       targetUrl: 'https://example.com/private-first',
       templateId: 'redirect',
+      slug: 'private-first',
     });
 
     expect((await request(app).get(`/api/links/${firstLink.body.id}`).set('Cookie', secondCookie)).status).toBe(404);
@@ -182,6 +182,13 @@ describe('Link Routes', () => {
       domainId: privateDomain.body.id,
     });
     expect(wrongDomain.status).toBe(404);
+
+    const duplicateSlug = await request(app).post('/api/links').set('Cookie', secondCookie).send({
+      targetUrl: 'https://example.com/duplicate-slug',
+      templateId: 'redirect',
+      slug: 'private-first',
+    });
+    expect(duplicateSlug.status).toBe(409);
 
     const secondList = await request(app).get('/api/links').set('Cookie', secondCookie);
     expect(secondList.body.some((link: { id: number }) => link.id === firstLink.body.id)).toBe(false);
