@@ -1,0 +1,1418 @@
+{
+  "id": "8ed5c1bf-4379-41d9-b377-b9bcd489691f",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.audit_logs": {
+      "name": "audit_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_type": {
+          "name": "target_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details": {
+          "name": "details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(CURRENT_TIMESTAMP)::text"
+        }
+      },
+      "indexes": {
+        "audit_logs_user_id_idx": {
+          "name": "audit_logs_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_logs_created_at_idx": {
+          "name": "audit_logs_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "audit_logs_user_id_users_id_fk": {
+          "name": "audit_logs_user_id_users_id_fk",
+          "tableFrom": "audit_logs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.domains": {
+      "name": "domains",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "domain": {
+          "name": "domain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(CURRENT_TIMESTAMP)::text"
+        }
+      },
+      "indexes": {
+        "domains_user_id_idx": {
+          "name": "domains_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "domains_user_id_users_id_fk": {
+          "name": "domains_user_id_users_id_fk",
+          "tableFrom": "domains",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "domains_domain_unique": {
+          "name": "domains_domain_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "domain"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.links": {
+      "name": "links",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_url": {
+          "name": "target_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "template_id": {
+          "name": "template_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "template_options": {
+          "name": "template_options",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gps_mode": {
+          "name": "gps_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'optional'"
+        },
+        "domain_id": {
+          "name": "domain_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "visit_count": {
+          "name": "visit_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "max_visits": {
+          "name": "max_visits",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(CURRENT_TIMESTAMP)::text"
+        }
+      },
+      "indexes": {
+        "links_user_id_idx": {
+          "name": "links_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "links_user_id_users_id_fk": {
+          "name": "links_user_id_users_id_fk",
+          "tableFrom": "links",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "links_domain_id_domains_id_fk": {
+          "name": "links_domain_id_domains_id_fk",
+          "tableFrom": "links",
+          "tableTo": "domains",
+          "columnsFrom": [
+            "domain_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "links_slug_unique": {
+          "name": "links_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "google_subject": {
+          "name": "google_subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
+        },
+        "token_version": {
+          "name": "token_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(CURRENT_TIMESTAMP)::text"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(CURRENT_TIMESTAMP)::text"
+        }
+      },
+      "indexes": {
+        "users_email_idx": {
+          "name": "users_email_idx",
+          "columns": [
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_google_subject_idx": {
+          "name": "users_google_subject_idx",
+          "columns": [
+            {
+              "expression": "google_subject",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_username_unique": {
+          "name": "users_username_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "username"
+          ]
+        },
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        },
+        "users_google_subject_unique": {
+          "name": "users_google_subject_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "google_subject"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.visitors": {
+      "name": "visitors",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "link_id": {
+          "name": "link_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip": {
+          "name": "ip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "browser": {
+          "name": "browser",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "browser_version": {
+          "name": "browser_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "os": {
+          "name": "os",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cpu_cores": {
+          "name": "cpu_cores",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ram": {
+          "name": "ram",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "screen_width": {
+          "name": "screen_width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "screen_height": {
+          "name": "screen_height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "color_depth": {
+          "name": "color_depth",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gpu_vendor": {
+          "name": "gpu_vendor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gpu_renderer": {
+          "name": "gpu_renderer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "canvas_hash": {
+          "name": "canvas_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "touch_support": {
+          "name": "touch_support",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "language": {
+          "name": "language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cookies_enabled": {
+          "name": "cookies_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "do_not_track": {
+          "name": "do_not_track",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "audio_hash": {
+          "name": "audio_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "webgl_max_texture_size": {
+          "name": "webgl_max_texture_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "webgl_max_viewport_width": {
+          "name": "webgl_max_viewport_width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "webgl_max_viewport_height": {
+          "name": "webgl_max_viewport_height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "webgl_extensions": {
+          "name": "webgl_extensions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "webgl_shader_precision": {
+          "name": "webgl_shader_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "connection_type": {
+          "name": "connection_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "downlink_speed": {
+          "name": "downlink_speed",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "network_rtt": {
+          "name": "network_rtt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "save_data": {
+          "name": "save_data",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "camera_count": {
+          "name": "camera_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "microphone_count": {
+          "name": "microphone_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "speaker_count": {
+          "name": "speaker_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "screen_avail_width": {
+          "name": "screen_avail_width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "screen_avail_height": {
+          "name": "screen_avail_height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pixel_depth": {
+          "name": "pixel_depth",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "device_pixel_ratio": {
+          "name": "device_pixel_ratio",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "screen_orientation": {
+          "name": "screen_orientation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor": {
+          "name": "vendor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_online": {
+          "name": "is_online",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pdf_viewer_enabled": {
+          "name": "pdf_viewer_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "webdriver_detected": {
+          "name": "webdriver_detected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "storage_quota": {
+          "name": "storage_quota",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "storage_usage": {
+          "name": "storage_usage",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "installed_languages": {
+          "name": "installed_languages",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "perm_geolocation": {
+          "name": "perm_geolocation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "perm_camera": {
+          "name": "perm_camera",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "perm_microphone": {
+          "name": "perm_microphone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "perm_notifications": {
+          "name": "perm_notifications",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "referrer": {
+          "name": "referrer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "page_load_time": {
+          "name": "page_load_time",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ad_blocker_detected": {
+          "name": "ad_blocker_detected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "incognito_detected": {
+          "name": "incognito_detected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "local_ips": {
+          "name": "local_ips",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "speech_voices_hash": {
+          "name": "speech_voices_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detected_fonts": {
+          "name": "detected_fonts",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prefers_color_scheme": {
+          "name": "prefers_color_scheme",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prefers_reduced_motion": {
+          "name": "prefers_reduced_motion",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hdr_support": {
+          "name": "hdr_support",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "forced_colors": {
+          "name": "forced_colors",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pointer_type": {
+          "name": "pointer_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "color_gamut": {
+          "name": "color_gamut",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "client_arch": {
+          "name": "client_arch",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "client_bitness": {
+          "name": "client_bitness",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "client_platform_version": {
+          "name": "client_platform_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "client_model": {
+          "name": "client_model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "battery_level": {
+          "name": "battery_level",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "battery_charging": {
+          "name": "battery_charging",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "intl_locale_fingerprint": {
+          "name": "intl_locale_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "js_heap_size_limit": {
+          "name": "js_heap_size_limit",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "multi_monitor": {
+          "name": "multi_monitor",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "max_touch_points": {
+          "name": "max_touch_points",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "installed_plugins": {
+          "name": "installed_plugins",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "api_support": {
+          "name": "api_support",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timezone_offset": {
+          "name": "timezone_offset",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observes_dst": {
+          "name": "observes_dst",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "navigation_type": {
+          "name": "navigation_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "keyboard_layout": {
+          "name": "keyboard_layout",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "math_fingerprint": {
+          "name": "math_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dom_rect_fingerprint": {
+          "name": "dom_rect_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "media_codec_fingerprint": {
+          "name": "media_codec_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "audio_context_props": {
+          "name": "audio_context_props",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "css_system_color_fingerprint": {
+          "name": "css_system_color_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "webgl2_fingerprint": {
+          "name": "webgl2_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "svg_filter_fingerprint": {
+          "name": "svg_filter_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_message_fingerprint": {
+          "name": "error_message_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wasm_capabilities": {
+          "name": "wasm_capabilities",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scrollbar_width": {
+          "name": "scrollbar_width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timer_resolution": {
+          "name": "timer_resolution",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "text_metrics_fingerprint": {
+          "name": "text_metrics_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_to_string_fingerprint": {
+          "name": "date_to_string_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "emoji_support_fingerprint": {
+          "name": "emoji_support_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "perf_entry_types": {
+          "name": "perf_entry_types",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "security_context": {
+          "name": "security_context",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "css_support_fingerprint": {
+          "name": "css_support_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "line_break_fingerprint": {
+          "name": "line_break_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mouse_data": {
+          "name": "mouse_data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "click_data": {
+          "name": "click_data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scroll_data": {
+          "name": "scroll_data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "touch_data": {
+          "name": "touch_data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motion_data": {
+          "name": "motion_data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dwell_time": {
+          "name": "dwell_time",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "focus_data": {
+          "name": "focus_data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bot_score": {
+          "name": "bot_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vpn_detected": {
+          "name": "vpn_detected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "privacy_score": {
+          "name": "privacy_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "device_tier": {
+          "name": "device_tier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "browser_authenticity": {
+          "name": "browser_authenticity",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uniqueness_score": {
+          "name": "uniqueness_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_consistency": {
+          "name": "location_consistency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "human_score": {
+          "name": "human_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_profile": {
+          "name": "user_profile",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risk_flags": {
+          "name": "risk_flags",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gps_granted": {
+          "name": "gps_granted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accuracy": {
+          "name": "accuracy",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "altitude": {
+          "name": "altitude",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "altitude_accuracy": {
+          "name": "altitude_accuracy",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "speed": {
+          "name": "speed",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "heading": {
+          "name": "heading",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip_city": {
+          "name": "ip_city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip_region": {
+          "name": "ip_region",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip_country": {
+          "name": "ip_country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip_country_code": {
+          "name": "ip_country_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip_lat": {
+          "name": "ip_lat",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip_lon": {
+          "name": "ip_lon",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip_isp": {
+          "name": "ip_isp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(CURRENT_TIMESTAMP)::text"
+        }
+      },
+      "indexes": {
+        "visitors_link_id_idx": {
+          "name": "visitors_link_id_idx",
+          "columns": [
+            {
+              "expression": "link_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "visitors_created_at_idx": {
+          "name": "visitors_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "visitors_link_id_links_id_fk": {
+          "name": "visitors_link_id_links_id_fk",
+          "tableFrom": "visitors",
+          "tableTo": "links",
+          "columnsFrom": [
+            "link_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.webhooks": {
+      "name": "webhooks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "events": {
+          "name": "events",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "secret": {
+          "name": "secret",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(CURRENT_TIMESTAMP)::text"
+        }
+      },
+      "indexes": {
+        "webhooks_user_id_idx": {
+          "name": "webhooks_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "webhooks_user_id_users_id_fk": {
+          "name": "webhooks_user_id_users_id_fk",
+          "tableFrom": "webhooks",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
